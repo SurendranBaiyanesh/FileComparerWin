@@ -25,6 +25,9 @@ public sealed class ComparisonResult
     public required IReadOnlyList<KeyedRow> ExtraInOutput { get; init; }
     public required IReadOnlyList<string> DuplicateKeyWarnings { get; init; }
 
+    /// <summary>Options that were set but could not take effect, such as a range without SimilarMatch.</summary>
+    public required IReadOnlyList<string> OptionWarnings { get; init; }
+
     public int InputRowCount => Input.Rows.Count;
     public int OutputRowCount => Output.Rows.Count;
     public int NonMatchingRowCount => ValueMismatches.Count + MissingInOutput.Count + ExtraInOutput.Count;

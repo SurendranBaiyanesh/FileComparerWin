@@ -120,6 +120,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <CheckBox Grid.Row="0" Grid.Column="0" Content="Ignore case" IsChecked="{Binding IgnoreCase}"
@@ -127,8 +128,19 @@
               <CheckBox Grid.Row="1" Grid.Column="0" Content="Trim values" IsChecked="{Binding TrimValues}"
                         ToolTip="Trim leading and trailing whitespace before comparing." />
               <CheckBox Grid.Row="2" Grid.Column="0" Content="Similar match (123.00 = 123)" IsChecked="{Binding SimilarMatch}"
+                        Margin="0,0,0,2"
                         ToolTip="Compare plain numbers by value rather than by how they are written. This decides which rows pair up as well." />
-              <CheckBox Grid.Row="3" Grid.Column="0" Content="List non-matching rows" IsChecked="{Binding ShowNonMatchingRows}" />
+
+              <!-- An option of Similar match rather than one of its own, so it sits under it and greys out with it. -->
+              <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal" Margin="24,0,0,8"
+                          IsEnabled="{Binding SimilarMatch}"
+                          ToolTip="How far apart two numbers may be and still count as equal. 0 requires them to be exactly equal; 1 lets 100 match 99 to 101, and 2 lets it match 98 to 102.">
+                <TextBlock Text="±" Style="{StaticResource FieldLabel}" Margin="0,0,6,0" />
+                <TextBox Width="58" Text="{Binding SimilarMatchRangeText, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="range" Style="{StaticResource Hint}" Margin="8,0,0,0" VerticalAlignment="Center" />
+              </StackPanel>
+
+              <CheckBox Grid.Row="4" Grid.Column="0" Content="List non-matching rows" IsChecked="{Binding ShowNonMatchingRows}" />
 
               <TextBlock Grid.Row="0" Grid.Column="1" Text="Max rows" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
               <TextBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,6"

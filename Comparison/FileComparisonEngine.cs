@@ -16,6 +16,7 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 
     public ComparisonResult Compare(DataTable input, DataTable output)
     {
+        ValidateOptions();
         List<string> keyColumns = ResolveKeyColumns(input, output);
         ColumnPlan columns = PlanColumns(input, output, keyColumns);
         List<string> comparedColumns = columns.Compared;
@@ -68,8 +69,28 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
             ValueMismatches = mismatches,
             MissingInOutput = missingInOutput,
             ExtraInOutput = extraInOutput,
-            DuplicateKeyWarnings = [.. DescribeDuplicates("Input", inputGroups), .. DescribeDuplicates("Output", outputGroups)]
+            DuplicateKeyWarnings = [.. DescribeDuplicates("Input", inputGroups), .. DescribeDuplicates("Output", outputGroups)],
+            OptionWarnings = [.. DescribeOptionsThatChangedNothing()]
         };
+    }
+
+    private void ValidateOptions()
+    {
+        if (options.SimilarMatchRange < 0)
+            throw new InvalidOperationException(
+                $"SimilarMatchRange is {options.SimilarMatchRange}. A range is a distance and cannot be negative; " +
+                "use 0 to require numbers to be exactly equal.");
+    }
+
+    /// <summary>
+    /// A range without SimilarMatch does nothing at all, and silence would read as the range having been
+    /// applied - a run that reported no differences would then look like agreement it had not tested for.
+    /// </summary>
+    private IEnumerable<string> DescribeOptionsThatChangedNothing()
+    {
+        if (options.SimilarMatchRange > 0 && !options.SimilarMatch)
+            yield return $"SimilarMatchRange is {Describe(options.SimilarMatchRange)} but SimilarMatch is off, so values were " +
+                         "compared as the text they are written as and the range was not applied.";
     }
 
     private List<string> ResolveKeyColumns(DataTable input, DataTable output)
@@ -168,6 +189,13 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
     /// <summary>The columns compared, those held back, and anything worth saying about the latter.</summary>
     private sealed record ColumnPlan(List<string> Compared, List<string> Skipped, List<string> Warnings);
 
+    /// <summary>
+    /// Groups rows on their key values. Deliberately exact, even when SimilarMatchRange allows values to
+    /// differ: "within a range of each other" is not an equivalence relation - with a range of 1, 100
+    /// matches 101 and 101 matches 102 while 100 and 102 do not - so there is no such thing as the group
+    /// a row belongs to. Rows therefore pair on keys that are equal, and the range applies afterwards, to
+    /// the values being compared.
+    /// </summary>
     private Dictionary<string, List<DataRow>> GroupByKey(DataTable table, List<string> keyColumns)
     {
         Dictionary<string, List<DataRow>> groups = new Dictionary<string, List<DataRow>>(StringComparer.Ordinal);
@@ -193,24 +221,56 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
             string inputValue = input.GetValue(inputRow, column);
             string outputValue = output.GetValue(outputRow, column);
 
-            if (!string.Equals(Normalize(inputValue), Normalize(outputValue), StringComparison.Ordinal))
+            if (!ValuesMatch(inputValue, outputValue))
                 differences.Add(new ValueDifference(column, inputValue, outputValue));
         }
 
         return differences;
     }
 
+    private bool ValuesMatch(string inputValue, string outputValue) =>
+        string.Equals(Normalize(inputValue), Normalize(outputValue), StringComparison.Ordinal)
+        || IsWithinRange(inputValue, outputValue);
+
+    /// <summary>
+    /// Two numbers no further apart than SimilarMatchRange. Both sides have to be numbers: a range is a
+    /// distance, and there is no distance between a number and a word, so anything else stays the text
+    /// comparison it already failed.
+    /// </summary>
+    private bool IsWithinRange(string inputValue, string outputValue)
+    {
+        if (!options.SimilarMatch || options.SimilarMatchRange <= 0)
+            return false;
+
+        if (!TryParseNumber(Prepare(inputValue), out decimal left) || !TryParseNumber(Prepare(outputValue), out decimal right))
+            return false;
+
+        try
+        {
+            return Math.Abs(left - right) <= options.SimilarMatchRange;
+        }
+        catch (OverflowException)
+        {
+            // Values at opposite ends of what a decimal can hold: further apart than any range.
+            return false;
+        }
+    }
+
     private string Normalize(string value)
     {
-        value = TextKey.Canonical(value);
-
-        if (options.TrimValues)
-            value = value.Trim();
+        value = Prepare(value);
 
         if (options.SimilarMatch && TryReadNumber(value, out string number))
             return number;
 
         return options.IgnoreCase ? value.ToUpperInvariant() : value;
+    }
+
+    /// <summary>The part of normalising that applies whether or not the value turns out to be a number.</summary>
+    private string Prepare(string value)
+    {
+        value = TextKey.Canonical(value);
+        return options.TrimValues ? value.Trim() : value;
     }
 
     /// <summary>
@@ -226,13 +286,23 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
     {
         number = string.Empty;
 
-        if (value.Length == 0 || !decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsed))
+        if (!TryParseNumber(value, out decimal parsed))
             return false;
 
         // Trailing zeros carry no value, and a signed zero is still zero.
         number = parsed == decimal.Zero ? "0" : parsed.ToString("0.############################", CultureInfo.InvariantCulture);
         return true;
     }
+
+    private static bool TryParseNumber(string value, out decimal parsed)
+    {
+        parsed = decimal.Zero;
+        return value.Length > 0 && decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed);
+    }
+
+    /// <summary>A range as the user wrote it, without the trailing zeros a decimal remembers.</summary>
+    private static string Describe(decimal range) =>
+        range.ToString("0.############################", CultureInfo.InvariantCulture);
 
     private string DisplayKey(DataTable table, DataRow row, List<string> keyColumns) =>
         string.Join(", ", keyColumns.Select(c => $"{c}={table.GetValue(row, c)}"));

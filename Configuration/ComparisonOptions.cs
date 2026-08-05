@@ -36,6 +36,14 @@ public sealed class ComparisonOptions
     /// </summary>
     public bool SimilarMatch { get; set; }
 
+    /// <summary>
+    /// How far apart two numbers may be and still count as equal. 0 requires them to be exactly equal;
+    /// 1 lets 100 match anything from 99 to 101, and 2 anything from 98 to 102. Only has an effect
+    /// while <see cref="SimilarMatch"/> is on, since that is what makes a value a number rather than
+    /// the text it is written as, and only for values that are numbers on both sides.
+    /// </summary>
+    public decimal SimilarMatchRange { get; set; }
+
     /// <summary>Delimiter for text files. Empty means detect it from the header line.</summary>
     public string Delimiter { get; set; } = string.Empty;
 
