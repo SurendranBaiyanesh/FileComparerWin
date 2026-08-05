@@ -1,0 +1,5 @@
+[
+  { "PersonNumber": "101", "Name": "Anbarasan", "LastName": "Anbhalagan", "Age": "27", "Education": "BSC" },
+  { "PersonNumber": "102", "Name": "Sivabalan", "LastName": "prabhakaran", "Age": "25", "Education": "BE" },
+  { "PersonNumber": "100", "Name": "AjithKumar", "LastName": "JJ", "Age": "29", "Education": "MCA" }
+]

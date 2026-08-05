@@ -1,0 +1,4 @@
+PersonNumber;Name;LastName;Age;Education;
+100;AjithKumar;JJ;29;MCA
+101;Anbarasan;Anbhalagan;27;BSC
+102;Sivabalan;prabhakaran;25;BE
