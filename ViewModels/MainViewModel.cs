@@ -607,11 +607,18 @@ public sealed class MainViewModel : ObservableObject
     private static IEnumerable<T> Limit<T>(IReadOnlyList<T> items, int maxRows) =>
         maxRows > 0 ? items.Take(maxRows) : items;
 
+    /// <summary>
+    /// The columns the run used. The compared list runs to dozens of names on a real file and is trimmed
+    /// to the width of the banner, so each list is counted as well as named: the count survives the
+    /// trimming, and the names in full are on the tooltip.
+    /// </summary>
     private static string BuildComparisonSummary(ComparisonResult result)
     {
-        string summary = $"Keys: {string.Join(", ", result.KeyColumns)}   ·   Compared: {string.Join(", ", result.ComparedColumns)}";
+        string summary = $"Keys: {string.Join(", ", result.KeyColumns)}   ·   " +
+                         $"Compared ({result.ComparedColumns.Count}): {string.Join(", ", result.ComparedColumns)}";
+
         if (result.SkippedColumns.Count > 0)
-            summary += $"   ·   Skipped: {string.Join(", ", result.SkippedColumns)}";
+            summary += $"   ·   Skipped ({result.SkippedColumns.Count}): {string.Join(", ", result.SkippedColumns)}";
 
         return summary;
     }

@@ -254,14 +254,20 @@
           </Style>
         </Border.Style>
 
+        <!-- The tiles size to their contents and the headline takes what is left. The other way round,
+             the summary - which names every compared column and runs to hundreds of characters on a
+             real file - would size its own column and squeeze the counts off the banner. -->
         <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" MinWidth="210" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" MinWidth="140" />
+            <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
 
-          <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
-            <StackPanel Orientation="Horizontal">
+          <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
               <TextBlock Text="{Binding VerdictHeadline}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center">
                 <TextBlock.Style>
                   <Style TargetType="TextBlock">
@@ -279,12 +285,18 @@
               </TextBlock>
               <TextBlock Text="{Binding VerdictDetail}" FontSize="13.5" Margin="10,0,0,0" VerticalAlignment="Center"
                          Foreground="{StaticResource TextBrush}" />
-            </StackPanel>
-            <TextBlock Text="{Binding ComparisonSummary}" Style="{StaticResource Hint}" Margin="0,3,0,0"
-                       ToolTip="{Binding ComparisonSummary}" />
           </StackPanel>
 
-          <UniformGrid Grid.Column="1" Rows="1" VerticalAlignment="Center">
+          <!-- Full width and trimmed, with the whole of it wrapped onto the tooltip. -->
+          <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,7,0,0"
+                     Text="{Binding ComparisonSummary}" Style="{StaticResource Hint}"
+                     ToolTipService.ShowDuration="60000">
+            <TextBlock.ToolTip>
+              <TextBlock Text="{Binding ComparisonSummary}" TextWrapping="Wrap" MaxWidth="620" />
+            </TextBlock.ToolTip>
+          </TextBlock>
+
+          <UniformGrid Grid.Row="0" Grid.Column="1" Rows="1" VerticalAlignment="Center">
             <Border Style="{StaticResource CountTile}">
               <StackPanel>
                 <TextBlock Text="Rows in input" Style="{StaticResource CountLabel}" />
