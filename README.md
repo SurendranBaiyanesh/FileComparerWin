@@ -42,6 +42,15 @@ shows up next to the file name rather than inside an error message half a minute
 Grids sort by any column: sorting the differences by *Column* answers "is one field behind every
 failure?" at a glance. `Ctrl+C` copies the selected rows with their headers.
 
+Every column also has a filter box under its title. Text is matched anywhere in the value and without
+regard to case, and filters narrow one another — a column name in *Column* and an amount in *Output
+value* shows the rows that are both. The text is used exactly as typed rather than trimmed, since a
+value with a space on the end of it is precisely the sort of thing worth searching for here.
+
+While a filter is narrowing a grid, a strip under it says how much is getting through and offers to
+clear them. The counts above the grid, and the number on the tab, deliberately do not move: they
+report the comparison, not the current view of it.
+
 ## Options
 
 Every option the console tool has, under the name the settings file uses.

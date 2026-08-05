@@ -299,6 +299,32 @@
       <Setter Property="RowHeaderWidth" Value="0" />
     </Style>
 
+    <!-- Column headers carry a filter box under their title, so the title is styled here rather than
+         by the header itself, whose content the template replaces. -->
+    <Style x:Key="ColumnTitle" TargetType="TextBlock">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="11.5" />
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="FilterBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+      <Setter Property="Margin" Value="0,4,0,0" />
+      <Setter Property="Padding" Value="4,2" />
+      <Setter Property="FontSize" Value="11.5" />
+      <Setter Property="FontWeight" Value="Normal" />
+      <Setter Property="MinWidth" Value="58" />
+      <Setter Property="ToolTip" Value="Filter this column. Matched anywhere in the value, without regard to case." />
+    </Style>
+
+    <!-- The footer that appears under a grid once a filter is narrowing it. -->
+    <Style x:Key="FilterFooter" TargetType="Border">
+      <Setter Property="Background" Value="{StaticResource WarningSoftBrush}" />
+      <Setter Property="BorderBrush" Value="#FDE68A" />
+      <Setter Property="BorderThickness" Value="1,0,1,1" />
+      <Setter Property="Padding" Value="10,4" />
+    </Style>
+
     <!-- The value a cell holds, shown as it is written: a trailing space is exactly the sort of
          difference this application exists to point at, so the text is boxed and monospaced. -->
     <Style x:Key="ValueCell" TargetType="TextBlock">

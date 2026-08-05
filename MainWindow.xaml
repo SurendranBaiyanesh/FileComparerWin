@@ -370,18 +370,70 @@
             <TabItem.Header>
               <TextBlock Text="{Binding ValueDifferenceRowCount, StringFormat='Value differences ({0})'}" />
             </TabItem.Header>
-            <DataGrid ItemsSource="{Binding Differences}" RowDetailsVisibilityMode="VisibleWhenSelected">
+            <DockPanel>
+            <Border DockPanel.Dock="Bottom" Style="{StaticResource FilterFooter}"
+                    Visibility="{Binding DifferenceFilters.IsActive, Converter={StaticResource BoolToVisibility}}">
+              <Grid>
+                <TextBlock Text="{Binding DifferencesFilterSummary}" Style="{StaticResource Hint}"
+                           Foreground="{StaticResource WarningBrush}" VerticalAlignment="Center" />
+                <Button Content="Clear filters" HorizontalAlignment="Right" Padding="8,2" MinWidth="0"
+                        Style="{StaticResource SecondaryButton}" Command="{Binding ClearDifferenceFiltersCommand}" />
+              </Grid>
+            </Border>
+            <DataGrid ItemsSource="{Binding DifferencesView}" RowDetailsVisibilityMode="VisibleWhenSelected">
               <DataGrid.Columns>
-                <DataGridTextColumn Header="Key" Binding="{Binding Key}" MaxWidth="380" />
-                <DataGridTextColumn Header="Column" Binding="{Binding Column}" MaxWidth="260" />
-                <DataGridTemplateColumn Header="Input value" MaxWidth="300">
+                <DataGridTextColumn Binding="{Binding Key}" MaxWidth="380">
+                  <DataGridTextColumn.HeaderTemplate>
+                    <DataTemplate>
+                      <StackPanel>
+                        <TextBlock Text="Key" Style="{StaticResource ColumnTitle}" />
+                        <TextBox Style="{StaticResource FilterBox}"
+                                 AutomationProperties.Name="Filter Key"
+                                 Text="{Binding DataContext.DifferenceFilters.Key.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                <DataGridTextColumn Binding="{Binding Column}" MaxWidth="260">
+                  <DataGridTextColumn.HeaderTemplate>
+                    <DataTemplate>
+                      <StackPanel>
+                        <TextBlock Text="Column" Style="{StaticResource ColumnTitle}" />
+                        <TextBox Style="{StaticResource FilterBox}"
+                                 AutomationProperties.Name="Filter Column"
+                                 Text="{Binding DataContext.DifferenceFilters.Column.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                <DataGridTemplateColumn MaxWidth="300">
+                  <DataGridTemplateColumn.HeaderTemplate>
+                    <DataTemplate>
+                      <StackPanel>
+                        <TextBlock Text="Input value" Style="{StaticResource ColumnTitle}" />
+                        <TextBox Style="{StaticResource FilterBox}"
+                                 AutomationProperties.Name="Filter Input value"
+                                 Text="{Binding DataContext.DifferenceFilters.InputValue.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.HeaderTemplate>
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <TextBlock Text="{Binding InputValue}" Style="{StaticResource ValueCell}" />
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Output value" MaxWidth="300">
+                <DataGridTemplateColumn MaxWidth="300">
+                  <DataGridTemplateColumn.HeaderTemplate>
+                    <DataTemplate>
+                      <StackPanel>
+                        <TextBlock Text="Output value" Style="{StaticResource ColumnTitle}" />
+                        <TextBox Style="{StaticResource FilterBox}"
+                                 AutomationProperties.Name="Filter Output value"
+                                 Text="{Binding DataContext.DifferenceFilters.OutputValue.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTemplateColumn.HeaderTemplate>
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <TextBlock Text="{Binding OutputValue}" Style="{StaticResource ValueCell}"
@@ -389,8 +441,30 @@
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Input line" Binding="{Binding InputLine}" />
-                <DataGridTextColumn Header="Output line" Binding="{Binding OutputLine}" />
+                <DataGridTextColumn Binding="{Binding InputLine}">
+                  <DataGridTextColumn.HeaderTemplate>
+                    <DataTemplate>
+                      <StackPanel>
+                        <TextBlock Text="Input line" Style="{StaticResource ColumnTitle}" />
+                        <TextBox Style="{StaticResource FilterBox}"
+                                 AutomationProperties.Name="Filter Input line"
+                                 Text="{Binding DataContext.DifferenceFilters.InputLine.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
+                <DataGridTextColumn Binding="{Binding OutputLine}">
+                  <DataGridTextColumn.HeaderTemplate>
+                    <DataTemplate>
+                      <StackPanel>
+                        <TextBlock Text="Output line" Style="{StaticResource ColumnTitle}" />
+                        <TextBox Style="{StaticResource FilterBox}"
+                                 AutomationProperties.Name="Filter Output line"
+                                 Text="{Binding DataContext.DifferenceFilters.OutputLine.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </DataGridTextColumn.HeaderTemplate>
+                </DataGridTextColumn>
               </DataGrid.Columns>
               <DataGrid.RowDetailsTemplate>
                 <DataTemplate>
@@ -418,44 +492,131 @@
                 </DataTemplate>
               </DataGrid.RowDetailsTemplate>
             </DataGrid>
+            </DockPanel>
           </TabItem>
 
           <TabItem>
             <TabItem.Header>
               <TextBlock Text="{Binding MissingRowCount, StringFormat='Missing in output ({0})'}" />
             </TabItem.Header>
-            <DataGrid ItemsSource="{Binding MissingRows}">
-              <DataGrid.Columns>
-                <DataGridTextColumn Header="Key" Binding="{Binding Key}" MaxWidth="420" />
-                <DataGridTextColumn Header="Line" Binding="{Binding LineNumber}" />
-                <DataGridTemplateColumn Header="Row" Width="*">
-                  <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                      <TextBlock Text="{Binding RowText}" Style="{StaticResource ValueCell}" />
-                    </DataTemplate>
-                  </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-              </DataGrid.Columns>
-            </DataGrid>
+            <DockPanel>
+              <Border DockPanel.Dock="Bottom" Style="{StaticResource FilterFooter}"
+                      Visibility="{Binding MissingFilters.IsActive, Converter={StaticResource BoolToVisibility}}">
+                <Grid>
+                  <TextBlock Text="{Binding MissingRowsFilterSummary}" Style="{StaticResource Hint}"
+                             Foreground="{StaticResource WarningBrush}" VerticalAlignment="Center" />
+                  <Button Content="Clear filters" HorizontalAlignment="Right" Padding="8,2" MinWidth="0"
+                          Style="{StaticResource SecondaryButton}" Command="{Binding ClearMissingFiltersCommand}" />
+                </Grid>
+              </Border>
+              <DataGrid ItemsSource="{Binding MissingRowsView}">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Binding="{Binding Key}" MaxWidth="420">
+                    <DataGridTextColumn.HeaderTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock Text="Key" Style="{StaticResource ColumnTitle}" />
+                          <TextBox Style="{StaticResource FilterBox}"
+                                   AutomationProperties.Name="Filter Key"
+                                   Text="{Binding DataContext.MissingFilters.Key.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                  </DataGridTextColumn>
+                  <DataGridTextColumn Binding="{Binding LineNumber}">
+                    <DataGridTextColumn.HeaderTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock Text="Line" Style="{StaticResource ColumnTitle}" />
+                          <TextBox Style="{StaticResource FilterBox}"
+                                   AutomationProperties.Name="Filter Line"
+                                   Text="{Binding DataContext.MissingFilters.Line.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                  </DataGridTextColumn>
+                  <DataGridTemplateColumn Width="*">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock Text="Row" Style="{StaticResource ColumnTitle}" />
+                          <TextBox Style="{StaticResource FilterBox}"
+                                   AutomationProperties.Name="Filter Row"
+                                   Text="{Binding DataContext.MissingFilters.Row.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding RowText}" Style="{StaticResource ValueCell}" />
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                </DataGrid.Columns>
+              </DataGrid>
+            </DockPanel>
           </TabItem>
 
           <TabItem>
             <TabItem.Header>
               <TextBlock Text="{Binding ExtraRowCount, StringFormat='Extra in output ({0})'}" />
             </TabItem.Header>
-            <DataGrid ItemsSource="{Binding ExtraRows}">
-              <DataGrid.Columns>
-                <DataGridTextColumn Header="Key" Binding="{Binding Key}" MaxWidth="420" />
-                <DataGridTextColumn Header="Line" Binding="{Binding LineNumber}" />
-                <DataGridTemplateColumn Header="Row" Width="*">
-                  <DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                      <TextBlock Text="{Binding RowText}" Style="{StaticResource ValueCell}" />
-                    </DataTemplate>
-                  </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-              </DataGrid.Columns>
-            </DataGrid>
+            <DockPanel>
+              <Border DockPanel.Dock="Bottom" Style="{StaticResource FilterFooter}"
+                      Visibility="{Binding ExtraFilters.IsActive, Converter={StaticResource BoolToVisibility}}">
+                <Grid>
+                  <TextBlock Text="{Binding ExtraRowsFilterSummary}" Style="{StaticResource Hint}"
+                             Foreground="{StaticResource WarningBrush}" VerticalAlignment="Center" />
+                  <Button Content="Clear filters" HorizontalAlignment="Right" Padding="8,2" MinWidth="0"
+                          Style="{StaticResource SecondaryButton}" Command="{Binding ClearExtraFiltersCommand}" />
+                </Grid>
+              </Border>
+              <DataGrid ItemsSource="{Binding ExtraRowsView}">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Binding="{Binding Key}" MaxWidth="420">
+                    <DataGridTextColumn.HeaderTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock Text="Key" Style="{StaticResource ColumnTitle}" />
+                          <TextBox Style="{StaticResource FilterBox}"
+                                   AutomationProperties.Name="Filter Key"
+                                   Text="{Binding DataContext.ExtraFilters.Key.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                  </DataGridTextColumn>
+                  <DataGridTextColumn Binding="{Binding LineNumber}">
+                    <DataGridTextColumn.HeaderTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock Text="Line" Style="{StaticResource ColumnTitle}" />
+                          <TextBox Style="{StaticResource FilterBox}"
+                                   AutomationProperties.Name="Filter Line"
+                                   Text="{Binding DataContext.ExtraFilters.Line.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTextColumn.HeaderTemplate>
+                  </DataGridTextColumn>
+                  <DataGridTemplateColumn Width="*">
+                    <DataGridTemplateColumn.HeaderTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock Text="Row" Style="{StaticResource ColumnTitle}" />
+                          <TextBox Style="{StaticResource FilterBox}"
+                                   AutomationProperties.Name="Filter Row"
+                                   Text="{Binding DataContext.ExtraFilters.Row.Text, RelativeSource={RelativeSource AncestorType=DataGrid}, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding RowText}" Style="{StaticResource ValueCell}" />
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                </DataGrid.Columns>
+              </DataGrid>
+            </DockPanel>
           </TabItem>
 
           <TabItem>

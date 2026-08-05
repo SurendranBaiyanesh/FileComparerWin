@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
+using System.Windows.Data;
 using System.Windows.Input;
 using FileComparerWindows.Comparison;
 using FileComparerWindows.Configuration;
@@ -58,6 +59,13 @@ public sealed class MainViewModel : ObservableObject
     private IReadOnlyList<SingleSideRow> _extraRows = [];
     private IReadOnlyList<string> _warnings = [];
 
+    private ICollectionView? _differencesView;
+    private ICollectionView? _missingRowsView;
+    private ICollectionView? _extraRowsView;
+    private string _differencesFilterSummary = string.Empty;
+    private string _missingRowsFilterSummary = string.Empty;
+    private string _extraRowsFilterSummary = string.Empty;
+
     public MainViewModel(IUserInteraction interaction)
     {
         _interaction = interaction;
@@ -71,6 +79,14 @@ public sealed class MainViewModel : ObservableObject
         Input.PropertyChanged += OnFilePropertyChanged;
         Output.PropertyChanged += OnFilePropertyChanged;
         PropertyChanged += OnReaderSettingChanged;
+
+        DifferenceFilters = new DifferenceFilters(OnDifferenceFiltersChanged);
+        MissingFilters = new SingleSideFilters(OnMissingFiltersChanged);
+        ExtraFilters = new SingleSideFilters(OnExtraFiltersChanged);
+
+        ClearDifferenceFiltersCommand = new RelayCommand(DifferenceFilters.Clear);
+        ClearMissingFiltersCommand = new RelayCommand(MissingFilters.Clear);
+        ClearExtraFiltersCommand = new RelayCommand(ExtraFilters.Clear);
 
         _compareCommand = new RelayCommand(async () => await CompareAsync(), () => !IsBusy);
 
@@ -110,6 +126,14 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand ExportDifferencesCommand { get; }
     public ICommand ShowCommandLineHelpCommand { get; }
     public ICommand ShowAboutCommand { get; }
+
+    public ICommand ClearDifferenceFiltersCommand { get; }
+    public ICommand ClearMissingFiltersCommand { get; }
+    public ICommand ClearExtraFiltersCommand { get; }
+
+    public DifferenceFilters DifferenceFilters { get; }
+    public SingleSideFilters MissingFilters { get; }
+    public SingleSideFilters ExtraFilters { get; }
 
     /// <summary>
     /// The encodings offered, led by the detecting default. An empty entry at the top of a list reads
@@ -366,6 +390,45 @@ public sealed class MainViewModel : ObservableObject
         private set => SetProperty(ref _extraRows, value);
     }
 
+    // The grids bind to the views rather than to the lists, so that the column filters can hide rows
+    // without the counts above them - which report the comparison, not the view of it - moving.
+
+    public ICollectionView? DifferencesView
+    {
+        get => _differencesView;
+        private set => SetProperty(ref _differencesView, value);
+    }
+
+    public ICollectionView? MissingRowsView
+    {
+        get => _missingRowsView;
+        private set => SetProperty(ref _missingRowsView, value);
+    }
+
+    public ICollectionView? ExtraRowsView
+    {
+        get => _extraRowsView;
+        private set => SetProperty(ref _extraRowsView, value);
+    }
+
+    public string DifferencesFilterSummary
+    {
+        get => _differencesFilterSummary;
+        private set => SetProperty(ref _differencesFilterSummary, value);
+    }
+
+    public string MissingRowsFilterSummary
+    {
+        get => _missingRowsFilterSummary;
+        private set => SetProperty(ref _missingRowsFilterSummary, value);
+    }
+
+    public string ExtraRowsFilterSummary
+    {
+        get => _extraRowsFilterSummary;
+        private set => SetProperty(ref _extraRowsFilterSummary, value);
+    }
+
     public IReadOnlyList<string> Warnings
     {
         get => _warnings;
@@ -465,9 +528,7 @@ public sealed class MainViewModel : ObservableObject
             (IReadOnlyList<DifferenceRow> differences, IReadOnlyList<SingleSideRow> missing, IReadOnlyList<SingleSideRow> extra, string report) =
                 await Task.Run(() => Project(result, options));
 
-            Differences = differences;
-            MissingRows = missing;
-            ExtraRows = extra;
+            SetRows(differences, missing, extra);
             Warnings = TextReport.CollectWarnings(result);
             ReportText = report;
 
@@ -555,11 +616,70 @@ public sealed class MainViewModel : ObservableObject
         return summary;
     }
 
+    /// <summary>
+    /// Puts the rows behind the grids and wraps each list in a view the column filters can narrow. The
+    /// filters themselves are left as they are: a filter typed to chase one column through a comparison
+    /// is usually still the filter wanted when that comparison is run again.
+    /// </summary>
+    private void SetRows(IReadOnlyList<DifferenceRow> differences, IReadOnlyList<SingleSideRow> missing, IReadOnlyList<SingleSideRow> extra)
+    {
+        Differences = differences;
+        MissingRows = missing;
+        ExtraRows = extra;
+
+        DifferencesView = CreateView(differences, row => DifferenceFilters.Matches((DifferenceRow)row));
+        MissingRowsView = CreateView(missing, row => MissingFilters.Matches((SingleSideRow)row));
+        ExtraRowsView = CreateView(extra, row => ExtraFilters.Matches((SingleSideRow)row));
+
+        OnDifferenceFiltersChanged();
+        OnMissingFiltersChanged();
+        OnExtraFiltersChanged();
+    }
+
+    private static ICollectionView CreateView(System.Collections.IEnumerable rows, Predicate<object> matches)
+    {
+        ICollectionView view = CollectionViewSource.GetDefaultView(rows);
+        view.Filter = matches;
+        return view;
+    }
+
+    private void OnDifferenceFiltersChanged()
+    {
+        DifferencesView?.Refresh();
+        DifferencesFilterSummary = DescribeFiltering(DifferencesView, Differences.Count);
+    }
+
+    private void OnMissingFiltersChanged()
+    {
+        MissingRowsView?.Refresh();
+        MissingRowsFilterSummary = DescribeFiltering(MissingRowsView, MissingRows.Count);
+    }
+
+    private void OnExtraFiltersChanged()
+    {
+        ExtraRowsView?.Refresh();
+        ExtraRowsFilterSummary = DescribeFiltering(ExtraRowsView, ExtraRows.Count);
+    }
+
+    /// <summary>
+    /// How much of the grid the filters are letting through. Worth saying plainly: a filtered grid and
+    /// an empty result look identical, and the counts above the grid deliberately do not move.
+    /// </summary>
+    private static string DescribeFiltering(ICollectionView? view, int total)
+    {
+        int shown = view switch
+        {
+            CollectionView collection => collection.Count,
+            null => total,
+            _ => view.Cast<object>().Count()
+        };
+
+        return $"Showing {shown:N0} of {total:N0} row(s)";
+    }
+
     private void ClearResults()
     {
-        Differences = [];
-        MissingRows = [];
-        ExtraRows = [];
+        SetRows([], [], []);
         Warnings = [];
         ReportText = string.Empty;
         ComparisonSummary = string.Empty;
