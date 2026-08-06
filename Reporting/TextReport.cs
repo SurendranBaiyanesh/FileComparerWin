@@ -45,9 +45,15 @@ public static class TextReport
         if (result.SkippedColumns.Count > 0)
             text.AppendLine($"  Skipped       : {string.Join(", ", result.SkippedColumns)}");
 
-        // A run that passes only because 123.00 was read as 123 should say so.
+        // A run that passes only because 123.00 was read as 123, or because 99 was near enough to 100,
+        // should say so.
         if (options.SimilarMatch)
+        {
             text.AppendLine("  SimilarMatch  : on - numbers compared by value, not by how they are written");
+
+            if (options.SimilarMatchRange > 0)
+                text.AppendLine($"  Range         : ±{FormatRange(options.SimilarMatchRange)} - numbers this far apart still count as equal");
+        }
 
         if (options.IgnoreCase)
             text.AppendLine("  IgnoreCase    : on - values compared without regard to case");
@@ -96,10 +102,14 @@ public static class TextReport
             warnings.Add($"Column(s) only in the output file, not compared: {string.Join(", ", result.ColumnsOnlyInOutput)}");
 
         warnings.AddRange(result.SkipColumnWarnings);
+        warnings.AddRange(result.OptionWarnings);
         warnings.AddRange(result.DuplicateKeyWarnings);
 
         return warnings;
     }
+
+    private static string FormatRange(decimal range) =>
+        range.ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture);
 
     private static void WriteNonMatchingRows(StringBuilder text, ComparisonResult result, int maxRows)
     {

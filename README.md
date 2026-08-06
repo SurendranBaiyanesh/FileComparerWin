@@ -57,6 +57,7 @@ Every option the console tool has, under the name the settings file uses.
 | Ignore case | `IgnoreCase` | Compare values case-insensitively. |
 | Trim values | `TrimValues` | Trim values before comparing. Default `true`. |
 | Similar match | `SimilarMatch` | Compare numbers by value: `123.00` equals `123`. |
+| ± range | `SimilarMatchRange` | How far apart two numbers may be and still count as equal. `0` = exactly equal. |
 | Delimiter | `Delimiter` | Delimiter for text files. `detect` reads it from the header. |
 | Encoding | `Encoding` | Encoding of the text files. `detect` by default. |
 | Sheet | `SheetName` | Worksheet for `.xlsx` files. Default: the first sheet. |
@@ -74,8 +75,8 @@ FileComparerWindows -i input.csv -o output.csv -c PersonNumber --run
 ```
 
 The switches are the console tool's: `-i`, `-o`, `-c`, `--compare-columns`, `-x`, `-s`, `--max-rows`,
-`--ignore-case`, `--trim`, `--similar-match`, `-d`, `-e`, `--sheet`, `--config`. **Help > Command
-line** lists them.
+`--ignore-case`, `--trim`, `--similar-match`, `--similar-range`, `-d`, `-e`, `--sheet`, `--config`.
+**Help > Command line** lists them.
 
 Exit codes, once the window is closed: `0` files match, `1` differences found, `2` error. A script can
 therefore launch the window and still learn the outcome.
@@ -112,6 +113,44 @@ Two consequences worth knowing. Leading zeros stop counting, so `007` and `7` be
 padded code must stay distinct, leave the option off or skip that column. And because it applies
 wherever values are matched, it also affects **which rows pair up**: a key column holding `1` in one
 file and `01` in the other will pair under SimilarMatch where it previously did not.
+
+## Range
+
+Similar match settles how a number is *written*; the range settles how close two numbers have to be.
+Set **± range** to 1 and a value of `100.00` matches anything from `99` to `101`; set it to 2 and it
+matches `98` to `102`. Both ends count, so at a range of 1 exactly `99` and exactly `101` match while
+`98.99` and `101.01` do not.
+
+| Range | `100.00` matches | does not match |
+| --- | --- | --- |
+| `0` (default) | `100`, `100.0`, `100.000` | `99.99`, `100.01` |
+| `1` | `99` … `101` | `98.99`, `101.01` |
+| `2` | `98` … `102` | `97.99`, `102.01` |
+| `0.5` | `99.5` … `100.5` | `99.49`, `100.51` |
+
+The range is a decimal, so `0.5` and `0.005` are as valid as `1`. A negative range is an error rather
+than a comparison that quietly does something else — a range is a distance.
+
+Three things to know about when it applies:
+
+- **Only to values that are numbers on both sides.** A range is a distance, and there is no distance
+  between a number and a word, so `BSC` against `MSC` stays the text comparison it always was, however
+  large the range.
+- **Only while Similar match is on**, since that is what makes a value a number rather than the text
+  it is written as. A range set without it is reported in Warnings rather than passing silently — a run
+  that found no differences would otherwise look like agreement it had never tested for.
+- **Not to row pairing.** Similar match does affect which rows pair up; the range deliberately does
+  not. "Within 1 of each other" is not an equivalence relation — `100` matches `101` and `101` matches
+  `102`, but `100` and `102` do not — so there is no such thing as the group a row belongs to. Rows
+  therefore pair on keys that are equal, and the range applies afterwards, to the values being
+  compared. A key column of `100` will not pair with `101` at any range.
+
+`samples/output-range.txt` is `samples/input.txt` with two ages moved by one, so it fails at range `0`
+and passes at range `1`:
+
+```bash
+FileComparerWindows -i samples/input.txt -o samples/output-range.txt -c PersonNumber --similar-match true --similar-range 1 --run
+```
 
 ## Skipping columns
 

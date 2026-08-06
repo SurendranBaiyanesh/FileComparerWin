@@ -29,6 +29,7 @@ public sealed class MainViewModel : ObservableObject
     private bool _ignoreCase;
     private bool _trimValues = true;
     private bool _similarMatch;
+    private string _similarMatchRangeText = "0";
     private string _delimiter = string.Empty;
     private string _encoding = string.Empty;
     private string _sheetName = string.Empty;
@@ -190,6 +191,16 @@ public sealed class MainViewModel : ObservableObject
     {
         get => _similarMatch;
         set => SetProperty(ref _similarMatch, value);
+    }
+
+    /// <summary>
+    /// How far apart two numbers may be and still count as equal. Kept as text like <see cref="MaxRowsText"/>,
+    /// so that a half-typed number is a half-typed number rather than a binding error.
+    /// </summary>
+    public string SimilarMatchRangeText
+    {
+        get => _similarMatchRangeText;
+        set => SetProperty(ref _similarMatchRangeText, value);
     }
 
     public string Delimiter
@@ -576,6 +587,7 @@ public sealed class MainViewModel : ObservableObject
         IgnoreCase = IgnoreCase,
         TrimValues = TrimValues,
         SimilarMatch = SimilarMatch,
+        SimilarMatchRange = ParseRange(SimilarMatchRangeText),
         Delimiter = Delimiter,
         SheetName = SheetName,
         Encoding = Encoding
@@ -593,6 +605,7 @@ public sealed class MainViewModel : ObservableObject
         IgnoreCase = options.IgnoreCase;
         TrimValues = options.TrimValues;
         SimilarMatch = options.SimilarMatch;
+        SimilarMatchRangeText = options.SimilarMatchRange.ToString(CultureInfo.InvariantCulture);
         Delimiter = options.Delimiter;
         SheetName = options.SheetName;
         Encoding = options.Encoding;
@@ -605,6 +618,13 @@ public sealed class MainViewModel : ObservableObject
 
     private static int ParseMaxRows(string value) =>
         int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed) && parsed > 0 ? parsed : 0;
+
+    /// <summary>
+    /// A negative range is passed through rather than clamped away, so that typing one produces the
+    /// engine's explanation instead of quietly comparing exactly and reporting differences.
+    /// </summary>
+    private static decimal ParseRange(string value) =>
+        decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsed) ? parsed : decimal.Zero;
 
     // ---------------------------------------------------------------- commands
 

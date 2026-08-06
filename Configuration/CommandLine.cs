@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace FileComparerWindows.Configuration;
 
 /// <summary>
@@ -37,6 +39,7 @@ public static class CommandLine
             else if (Matches(arg, "--ignore-case")) options.IgnoreCase = ParseBool(Next());
             else if (Matches(arg, "--trim")) options.TrimValues = ParseBool(Next());
             else if (Matches(arg, "--similar-match")) options.SimilarMatch = ParseBool(Next());
+            else if (Matches(arg, "--similar-range", "--range")) options.SimilarMatchRange = ParseDecimal(Next(), options.SimilarMatchRange);
             else if (Matches(arg, "--delimiter", "-d")) options.Delimiter = Next() ?? options.Delimiter;
             else if (Matches(arg, "--sheet")) options.SheetName = Next() ?? options.SheetName;
             else if (Matches(arg, "--encoding", "-e")) options.Encoding = Next() ?? options.Encoding;
@@ -60,6 +63,10 @@ public static class CommandLine
 
     private static int ParseInt(string? value, int fallback) =>
         int.TryParse(value, out int parsed) ? parsed : fallback;
+
+    /// <summary>Invariant culture, so that --similar-range 0.5 means a half wherever the machine is set up.</summary>
+    private static decimal ParseDecimal(string? value, decimal fallback) =>
+        decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsed) ? parsed : fallback;
 
     public static string HelpText =>
         """
@@ -86,6 +93,10 @@ public static class CommandLine
               --trim <bool>             Trim values before comparing. Default true.
               --similar-match <bool>    Compare numbers by value, so 123.00 equals 123
                                         and 110.60 equals 110.6.
+              --similar-range <n>       How far apart two numbers may be and still count
+                                        as equal. 0 (default) requires them to be exactly
+                                        equal; 1 lets 100 match 99 to 101, 2 lets it match
+                                        98 to 102. Needs --similar-match.
           -d, --delimiter <char>        Delimiter for text files. Default: auto-detect.
           -e, --encoding <name>         Encoding of the text files: utf-8, utf-16, utf-16be,
                                         utf-32, ascii, latin1 or windows-1252.
