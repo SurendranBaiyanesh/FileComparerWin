@@ -16,9 +16,6 @@ public sealed class ComparisonResult
     /// <summary>Skipped names that changed nothing: unknown columns, or key columns.</summary>
     public required IReadOnlyList<string> SkipColumnWarnings { get; init; }
 
-    public required IReadOnlyList<string> ColumnsOnlyInInput { get; init; }
-    public required IReadOnlyList<string> ColumnsOnlyInOutput { get; init; }
-
     public int MatchedRowCount { get; init; }
     public required IReadOnlyList<RowMismatch> ValueMismatches { get; init; }
     public required IReadOnlyList<KeyedRow> MissingInOutput { get; init; }

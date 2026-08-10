@@ -1,0 +1,4 @@
+education;age;LASTNAME;name;personnumber
+MCA;29;JJ;AjithKumar;100
+BSC;27;Anbhalagan;Anbarasan;101
+BE;25;prabhakaran;Sivabalan;102

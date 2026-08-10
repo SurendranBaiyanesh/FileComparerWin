@@ -59,6 +59,8 @@ public sealed class MainViewModel : ObservableObject
     private IReadOnlyList<SingleSideRow> _extraRows = [];
     private IReadOnlyList<string> _warnings = [];
 
+    private ColumnMismatch? _columnMismatch;
+
     private ICollectionView? _differencesView;
     private ICollectionView? _missingRowsView;
     private ICollectionView? _extraRowsView;
@@ -441,6 +443,19 @@ public sealed class MainViewModel : ObservableObject
 
     public int WarningCount => _warnings.Count;
 
+    /// <summary>
+    /// Set while the two files carry different columns, which the comparison refuses to run on. Said as
+    /// soon as both files have been read rather than only when Compare is pressed: a column missing from
+    /// an export is a fault in the file, and the sooner it is seen the less there is to undo.
+    /// </summary>
+    public bool HasColumnMismatch => _columnMismatch is not null;
+
+    /// <summary>The columns that are on one side only, short enough for a line under the file boxes.</summary>
+    public string ColumnMismatchHeadline => _columnMismatch?.Headline ?? string.Empty;
+
+    /// <summary>The same thing with both headers spelt out, as the tooltip and as the error Compare stops with.</summary>
+    public string ColumnMismatchDetail => _columnMismatch?.Detail ?? string.Empty;
+
     // ---------------------------------------------------------------- reading the files
 
     private void OnFilePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -448,8 +463,23 @@ public sealed class MainViewModel : ObservableObject
         if (e.PropertyName == nameof(LoadedFile.Path) && sender is LoadedFile file)
             _ = file.RefreshLaterAsync(BuildOptions());
 
+        if (e.PropertyName == nameof(LoadedFile.Table))
+            RefreshColumnMismatch();
+
         if (e.PropertyName == nameof(LoadedFile.SheetNames))
             RaisePropertyChanged(nameof(SheetChoices));
+    }
+
+    /// <summary>Compares the two headers, once there are two of them to compare.</summary>
+    private void RefreshColumnMismatch()
+    {
+        _columnMismatch = Input.Table is { } input && Output.Table is { } output
+            ? FileComparisonEngine.FindColumnMismatch(input, output)
+            : null;
+
+        RaisePropertyChanged(nameof(HasColumnMismatch));
+        RaisePropertyChanged(nameof(ColumnMismatchHeadline));
+        RaisePropertyChanged(nameof(ColumnMismatchDetail));
     }
 
     private void OnReaderSettingChanged(object? sender, PropertyChangedEventArgs e)
@@ -940,7 +970,8 @@ public sealed class MainViewModel : ObservableObject
           Excel           .xlsx .xlsm                read straight from the Open XML package, first row is the header
 
         The two files need not share a format or an encoding, and columns are matched by name rather
-        than position.
+        than position. They must carry the same columns, though: a column on one side only stops the
+        comparison as an error rather than being left out of it.
 
         Encoding is detected from a byte order mark, else UTF-8, else Windows-1252, and text is
         normalised (NFC) before anything is matched.

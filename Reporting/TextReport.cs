@@ -90,16 +90,14 @@ public static class TextReport
         text.AppendLine();
     }
 
-    /// <summary>The warnings in report order, shared with the window's Warnings tab.</summary>
+    /// <summary>
+    /// The warnings in report order, shared with the window's Warnings tab. Columns present in only one
+    /// of the files are not among them: a comparison that got this far was run on two files carrying the
+    /// same columns, since anything else stops as an error before a row is read.
+    /// </summary>
     public static List<string> CollectWarnings(ComparisonResult result)
     {
         List<string> warnings = new List<string>();
-
-        if (result.ColumnsOnlyInInput.Count > 0)
-            warnings.Add($"Column(s) only in the input file, not compared: {string.Join(", ", result.ColumnsOnlyInInput)}");
-
-        if (result.ColumnsOnlyInOutput.Count > 0)
-            warnings.Add($"Column(s) only in the output file, not compared: {string.Join(", ", result.ColumnsOnlyInOutput)}");
 
         warnings.AddRange(result.SkipColumnWarnings);
         warnings.AddRange(result.OptionWarnings);

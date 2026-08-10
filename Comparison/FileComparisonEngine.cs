@@ -17,6 +17,7 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
     public ComparisonResult Compare(DataTable input, DataTable output)
     {
         ValidateOptions();
+        RequireMatchingColumns(input, output);
         List<string> keyColumns = ResolveKeyColumns(input, output);
         ColumnPlan columns = PlanColumns(input, output, keyColumns);
         List<string> comparedColumns = columns.Compared;
@@ -63,8 +64,6 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
             ComparedColumns = comparedColumns,
             SkippedColumns = columns.Skipped,
             SkipColumnWarnings = columns.Warnings,
-            ColumnsOnlyInInput = [.. input.Columns.Where(c => !output.HasColumn(c))],
-            ColumnsOnlyInOutput = [.. output.Columns.Where(c => !input.HasColumn(c))],
             MatchedRowCount = matched,
             ValueMismatches = mismatches,
             MissingInOutput = missingInOutput,
@@ -91,6 +90,46 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
         if (options.SimilarMatchRange > 0 && !options.SimilarMatch)
             yield return $"SimilarMatchRange is {Describe(options.SimilarMatchRange)} but SimilarMatch is off, so values were " +
                          "compared as the text they are written as and the range was not applied.";
+    }
+
+    /// <summary>
+    /// The two files have to carry the same columns. A column on one side only cannot be compared -
+    /// there is nothing to compare it against - and leaving it out quietly would turn an export that
+    /// has lost a column into a run reporting that every row matches.
+    /// </summary>
+    private static void RequireMatchingColumns(DataTable input, DataTable output)
+    {
+        if (FindColumnMismatch(input, output) is { } mismatch)
+            throw new InvalidOperationException(mismatch.Detail);
+    }
+
+    /// <summary>
+    /// The columns that are on one side only, or null when the two headers agree. Public because the
+    /// window says so under the file boxes as soon as both files have been read, rather than leaving
+    /// the user to name key columns and press Compare to learn what the two headers already said.
+    /// </summary>
+    public static ColumnMismatch? FindColumnMismatch(DataTable input, DataTable output)
+    {
+        List<string> onlyInInput = [.. input.Columns.Where(c => !output.HasColumn(c))];
+        List<string> onlyInOutput = [.. output.Columns.Where(c => !input.HasColumn(c))];
+
+        if (onlyInInput.Count == 0 && onlyInOutput.Count == 0)
+            return null;
+
+        List<string> sides = [];
+        if (onlyInInput.Count > 0)
+            sides.Add($"only in the input file: {string.Join(", ", onlyInInput)}");
+
+        if (onlyInOutput.Count > 0)
+            sides.Add($"only in the output file: {string.Join(", ", onlyInOutput)}");
+
+        string headline = $"The two files do not have the same columns - {string.Join("; ", sides)}.";
+
+        return new ColumnMismatch(headline,
+            $"{headline}{Environment.NewLine}" +
+            $"  Input columns : {string.Join(", ", input.Columns)}{Environment.NewLine}" +
+            $"  Output columns: {string.Join(", ", output.Columns)}" +
+            EncodingHint(input, output));
     }
 
     private List<string> ResolveKeyColumns(DataTable input, DataTable output)
@@ -142,7 +181,7 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
                 $"Every comparable column was skipped ({string.Join(", ", selected)}), leaving nothing to compare.{Environment.NewLine}" +
                 "  Rows would pair on the key columns and then match by definition.");
 
-        return new ColumnPlan(compared, removed, [.. DescribeSkipsThatChangedNothing(input, output, keyColumns, removed)]);
+        return new ColumnPlan(compared, removed, [.. DescribeSkipsThatChangedNothing(input, keyColumns, removed)]);
     }
 
     private List<string> SelectComparableColumns(DataTable input, DataTable output, List<string> keyColumns)
@@ -165,9 +204,11 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 
     /// <summary>
     /// A name that was skipped but was never going to be compared anyway. Saying nothing would read as
-    /// the column having been excluded, when the comparison is exactly what it would have been.
+    /// the column having been excluded, when the comparison is exactly what it would have been. Only the
+    /// input's header is consulted: by the time this runs, the two files are known to carry the same
+    /// columns, so a name the input does not have is a name neither file has.
     /// </summary>
-    private IEnumerable<string> DescribeSkipsThatChangedNothing(DataTable input, DataTable output, List<string> keyColumns, List<string> removed)
+    private IEnumerable<string> DescribeSkipsThatChangedNothing(DataTable input, List<string> keyColumns, List<string> removed)
     {
         foreach (string name in options.SkipColumns)
         {
@@ -176,10 +217,10 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 
             if (keyColumns.Any(k => SameColumn(k, name)))
                 yield return $"Skipped column '{name}' is a key column: it pairs the rows and is not compared in any case.";
-            else if (!input.HasColumn(name) && !output.HasColumn(name))
+            else if (!input.HasColumn(name))
                 yield return $"Skipped column '{name}' is not a column in either file.";
             else
-                yield return $"Skipped column '{name}' is not in both files, so it was not being compared in any case.";
+                yield return $"Skipped column '{name}' is not among the Compare columns, so it was not being compared in any case.";
         }
     }
 
@@ -311,3 +352,10 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
         groups.Where(g => g.Value.Count > 1)
             .Select(g => $"{side} file has {g.Value.Count} rows with key '{g.Key.Replace(KeySeparator, '|')}' (lines {string.Join(", ", g.Value.Select(r => r.LineNumber))}).");
 }
+
+/// <summary>
+/// Two headers that disagree: named briefly enough for the line under the file boxes, and in full -
+/// both headers, and the encoding hint when one of them was decoded wrongly - for the error the
+/// comparison stops with.
+/// </summary>
+public sealed record ColumnMismatch(string Headline, string Detail);
