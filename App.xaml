@@ -4,7 +4,7 @@
   <Application.Resources>
 
     <!-- Palette -->
-    <SolidColorBrush x:Key="WindowBrush"      Color="#F3F4F6" />
+    <SolidColorBrush x:Key="WindowBrush"      Color="#EEF5EF" />
     <SolidColorBrush x:Key="CardBrush"        Color="#FFFFFF" />
     <SolidColorBrush x:Key="BorderBrushSoft"  Color="#E5E7EB" />
     <SolidColorBrush x:Key="BorderBrushHard"  Color="#D1D5DB" />
@@ -21,6 +21,15 @@
     <SolidColorBrush x:Key="WarningBrush"     Color="#92400E" />
     <SolidColorBrush x:Key="WarningSoftBrush" Color="#FFFBEB" />
     <SolidColorBrush x:Key="HoverBrush"       Color="#F9FAFB" />
+
+    <!-- The window itself. A wash of green at the top that has thinned almost to nothing by the
+         bottom, so the white cards keep their edges against it rather than dissolving into it. -->
+    <LinearGradientBrush x:Key="AppBackgroundBrush" StartPoint="0.15,0" EndPoint="0.6,1">
+      <GradientStop Offset="0"    Color="#D7ECDD" />
+      <GradientStop Offset="0.5"  Color="#E7F4EA" />
+      <GradientStop Offset="0.8"  Color="#F3F9F5" />
+      <GradientStop Offset="1"    Color="#F7FAF8" />
+    </LinearGradientBrush>
 
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 

@@ -5,7 +5,7 @@
         Height="880" Width="1240"
         MinHeight="700" MinWidth="1020"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource WindowBrush}"
+        Background="{StaticResource AppBackgroundBrush}"
         Foreground="{StaticResource TextBrush}"
         FontFamily="Segoe UI"
         FontSize="13"
@@ -14,7 +14,8 @@
   <DockPanel>
 
     <!-- ================================================================ menu -->
-    <Menu DockPanel.Dock="Top" Background="White" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="0,0,0,1" Padding="4,2">
+    <!-- Transparent rather than white, so the wash behind it runs to the top edge of the window. -->
+    <Menu DockPanel.Dock="Top" Background="Transparent" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="0,0,0,1" Padding="4,2">
       <MenuItem Header="_File">
         <MenuItem Header="_Load settings…" Command="{Binding LoadSettingsCommand}" />
         <MenuItem Header="_Save settings" Command="{Binding SaveSettingsCommand}" />
