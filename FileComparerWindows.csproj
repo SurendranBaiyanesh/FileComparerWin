@@ -12,6 +12,23 @@
     <ApplicationIcon></ApplicationIcon>
   </PropertyGroup>
 
+  <!-- The assembly's identity. The build turns these into assembly attributes and into the Win32
+       version resource behind the Details tab of the file's properties, which is the only account a
+       published executable can give of itself once it has been copied away from here on its own.
+       Attributes that no property covers are in Properties\AssemblyInfo.cs. -->
+  <PropertyGroup>
+    <Product>File Comparer</Product>
+    <AssemblyTitle>File Comparer</AssemblyTitle>
+    <Description>Compares an input file and an output file row by row, pairing rows by one or more key columns.</Description>
+    <Company>Surendran Balamurugan</Company>
+    <Authors>Surendran Balamurugan</Authors>
+    <Copyright>Copyright © 2026 Surendran Balamurugan</Copyright>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- A WPF project leaves System.IO out of the implicit usings, because System.Windows.Shapes.Path
          would then collide with System.IO.Path. This application reads files far more often than it
@@ -21,8 +38,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="samples\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Both sit beside the build output so that dotnet run has settings and sample files to hand,
+         and neither is published: the published application is meant to be one executable and nothing
+         else. A missing settings file costs nothing, since the application starts on its defaults and
+         writes the file itself the first time settings are saved. -->
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+    <None Update="samples\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
 </Project>

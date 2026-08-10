@@ -77,6 +77,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <TextBlock Grid.Row="0" Grid.Column="0" Text="Input" Style="{StaticResource FieldLabel}" Width="54" />
@@ -102,6 +103,20 @@
               <TextBlock Grid.Row="3" Grid.Column="1" Margin="2,3,0,0"
                          DataContext="{Binding Output}" Text="{Binding Description}"
                          Style="{StaticResource FileHint}" />
+
+              <!-- Two headers that disagree, said as soon as both files have been read rather than left
+                   for Compare, which stops with the same message spelt out in full. -->
+              <Border Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Margin="2,9,0,0" Padding="9,6"
+                      Background="{StaticResource DangerSoftBrush}" BorderBrush="#FECACA" BorderThickness="1"
+                      CornerRadius="4" ToolTipService.ShowDuration="60000"
+                      Visibility="{Binding HasColumnMismatch, Converter={StaticResource BoolToVisibility}}">
+                <Border.ToolTip>
+                  <TextBlock Text="{Binding ColumnMismatchDetail}" TextWrapping="Wrap" MaxWidth="620"
+                             FontFamily="{StaticResource MonoFont}" FontSize="12" />
+                </Border.ToolTip>
+                <TextBlock Text="{Binding ColumnMismatchHeadline}" Style="{StaticResource Hint}"
+                           Foreground="{StaticResource DangerBrush}" />
+              </Border>
             </Grid>
           </StackPanel>
         </Border>
@@ -221,7 +236,7 @@
         </Grid.ColumnDefinitions>
 
         <TextBlock Grid.Column="0" VerticalAlignment="Center" Style="{StaticResource Hint}"
-                   Text="Delimited text · XML · JSON · Excel. The two files need not share a format or an encoding." />
+                   Text="Delimited text · XML · JSON · Excel. The two files need not share a format or an encoding, but must carry the same columns." />
 
         <StackPanel Grid.Column="1" Orientation="Horizontal">
           <Button Content="Swap" Style="{StaticResource SecondaryButton}" Command="{Binding SwapFilesCommand}"

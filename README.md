@@ -26,17 +26,39 @@ Files can be typed, browsed for, or dropped onto either box. Each file is read a
 settles, so the format, encoding and row count appear under it straight away — a mis-detected encoding
 shows up next to the file name rather than inside an error message half a minute later.
 
+## A single executable
+
+```bash
+dotnet publish -p:PublishProfile=SingleFile
+```
+
+`bin\publish\FileComparerWindows.exe` is the whole application — the .NET runtime, WPF and the native
+graphics libraries are inside it. Copy that one file to a machine with nothing installed on it,
+double-click, and the window opens. It is a 64-bit build; Windows on ARM runs it under emulation.
+
+The first launch unpacks the native libraries into `%TEMP%\.net\FileComparerWindows\`, which needs
+neither an installer nor an administrator, and later launches reuse them.
+
+Settings are read from and written to `appsettings.json` beside the executable. It is not published,
+because there is nothing to say before the first run: the application starts on its defaults and
+writes the file itself when settings are saved. Put one next to the executable to start somewhere
+else.
+
+The published file is compressed, trading about a second of start-up for less than half the size.
+Turning `EnableCompressionInSingleFile` off in
+[SingleFile.pubxml](Properties/PublishProfiles/SingleFile.pubxml) makes the opposite trade.
+
 ## The window
 
 | | |
 | --- | --- |
-| **Files** | Input and output paths, with what was read from each. |
+| **Files** | Input and output paths, with what was read from each, and a line in red when the two files do not carry the same columns. |
 | **Columns** | Key, Compare and Skip. **Pick…** ticks names off the headers the files actually have, so a column called `Name des Versicherten/Begünstigten` need not be typed. |
 | **Options** | Ignore case, trim values, similar match, list non-matching rows, max rows, delimiter, encoding, worksheet. |
 | **Verdict** | SUCCESS or FAILED, the columns the run used, and the six counts. |
 | **Value differences** | One row per differing column, with the key, both values and both line numbers. Select a row to see the two source rows in full. |
 | **Missing / Extra** | Rows present on one side only. |
-| **Warnings** | Columns present in only one file, skipped names that changed nothing, duplicate keys. |
+| **Warnings** | Skipped names that changed nothing, duplicate keys, options that could not take effect. |
 | **Report** | The console tool's report as text — copy it, or export it. |
 
 Grids sort by any column: sorting the differences by *Column* answers "is one field behind every
@@ -161,6 +183,22 @@ and passes at range `1`:
 FileComparerWindows -i samples/input.txt -o samples/output-range.txt -c PersonNumber --similar-match true --similar-range 1 --run
 ```
 
+## Columns
+
+The two files have to carry the same columns. A column on one side only stops the comparison with an
+error naming it, rather than being left out of the run: there is nothing to compare it against, and a
+comparison that quietly ignored it would report that every row matches while the output is missing a
+field.
+
+Order and casing do not count, since columns are matched by name — the error is about which names are
+there, not the shape of the header. The window says so as soon as both files have been read, on a red
+line under the file boxes with both headers on its tooltip, rather than waiting for Compare to be
+pressed.
+
+The commonest reason for a column to be on one side only is the encoding: a Windows-1252 header read
+as UTF-8 turns `Begünstigten` into `Beg�nstigten`, which is a different name. The error says so when
+it finds a replacement character in a header, and [Encoding](#encoding) is the setting that fixes it.
+
 ## Skipping columns
 
 Name a column and it stops counting towards the result — useful for the export timestamp or running
@@ -183,7 +221,7 @@ Skipping every comparable column is an error rather than a comparison that trivi
 | Excel | `.xlsx` `.xlsm` | Read straight from the Open XML package — no third-party library. First row is the header. |
 
 The two files do not have to be in the same format: comparing a `.txt` against an `.xlsx` works, as
-long as the key columns exist on both sides.
+long as both carry the same columns.
 
 Columns are matched by name, not position, so files with columns in a different order compare fine.
 A header ending in a trailing separator (`PersonNumber;Name;LastName;Age;Education;`) is handled —
