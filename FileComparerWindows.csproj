@@ -21,8 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="samples\**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Both sit beside the build output so that dotnet run has settings and sample files to hand,
+         and neither is published: the published application is meant to be one executable and nothing
+         else. A missing settings file costs nothing, since the application starts on its defaults and
+         writes the file itself the first time settings are saved. -->
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+    <None Update="samples\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
 </Project>

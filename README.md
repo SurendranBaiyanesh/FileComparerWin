@@ -26,6 +26,28 @@ Files can be typed, browsed for, or dropped onto either box. Each file is read a
 settles, so the format, encoding and row count appear under it straight away — a mis-detected encoding
 shows up next to the file name rather than inside an error message half a minute later.
 
+## A single executable
+
+```bash
+dotnet publish -p:PublishProfile=SingleFile
+```
+
+`bin\publish\FileComparerWindows.exe` is the whole application — the .NET runtime, WPF and the native
+graphics libraries are inside it. Copy that one file to a machine with nothing installed on it,
+double-click, and the window opens. It is a 64-bit build; Windows on ARM runs it under emulation.
+
+The first launch unpacks the native libraries into `%TEMP%\.net\FileComparerWindows\`, which needs
+neither an installer nor an administrator, and later launches reuse them.
+
+Settings are read from and written to `appsettings.json` beside the executable. It is not published,
+because there is nothing to say before the first run: the application starts on its defaults and
+writes the file itself when settings are saved. Put one next to the executable to start somewhere
+else.
+
+The published file is compressed, trading about a second of start-up for less than half the size.
+Turning `EnableCompressionInSingleFile` off in
+[SingleFile.pubxml](Properties/PublishProfiles/SingleFile.pubxml) makes the opposite trade.
+
 ## The window
 
 | | |
