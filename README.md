@@ -22,9 +22,24 @@ dotnet build -c Release
 The window opens with whatever `appsettings.json` and the command line supply. Choose two files, name
 the key column(s), press **Compare**.
 
-Files can be typed, browsed for, or dropped onto either box. Each file is read as soon as its path
+Files can be typed, browsed for, or dropped. The whole **Files** panel takes a drop, not only the two
+boxes, and it lights up while a file is over it:
+
+| Dropped | Where it lands |
+| --- | --- |
+| One file on a box | That box. |
+| One file elsewhere on the panel | The empty box, or Input once both are filled. |
+| Two files at once, anywhere on the panel | Input takes the first, Output the second. Drop them one at a time to pair them the other way round. |
+
+Folders are ignored, and so is anything that is not a file. Each file is read as soon as its path
 settles, so the format, encoding and row count appear under it straight away — a mis-detected encoding
 shows up next to the file name rather than inside an error message half a minute later.
+
+Windows will not let one process hand data to a window running with more privilege than itself, so a
+drop from Explorer is refused — silently, with no cursor and no message — by a window started from an
+elevated Visual Studio or an administrator's prompt. The window asks for the exception the guard keeps
+for this, so drops arrive either way, but running it without administrator rights is still the better
+habit.
 
 ## A single executable
 

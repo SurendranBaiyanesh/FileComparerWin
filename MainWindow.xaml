@@ -63,7 +63,11 @@
           <ColumnDefinition Width="2*" MinWidth="380" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Style="{StaticResource Card}">
+        <!-- The whole panel takes a drop, not only the two boxes: a path box is a few pixels tall, and
+             a file dragged towards one is easily let go of just beside it. -->
+        <Border x:Name="FilesCard" Grid.Column="0" Style="{StaticResource Card}"
+                AllowDrop="True" DragOver="OnFileDragOver" Drop="OnCardDrop"
+                PreviewDragEnter="OnCardDragEnter" DragLeave="OnCardDragLeave" PreviewDrop="OnCardPreviewDrop">
           <StackPanel>
             <TextBlock Text="FILES" Style="{StaticResource SectionHeader}" />
             <Grid>
@@ -85,7 +89,7 @@
                        DataContext="{Binding Input}"
                        Text="{Binding Path=Path, UpdateSourceTrigger=PropertyChanged}"
                        AllowDrop="True" PreviewDragOver="OnFileDragOver" PreviewDrop="OnFileDrop"
-                       ToolTip="Type or paste a path, or drop a file here." />
+                       ToolTip="Type or paste a path, or drop a file anywhere in this panel. Two files at once fill both boxes." />
               <Button Grid.Row="0" Grid.Column="2" Content="Browse…" Margin="8,0,0,0"
                       Style="{StaticResource SecondaryButton}" Command="{Binding BrowseInputCommand}" />
               <TextBlock Grid.Row="1" Grid.Column="1" Margin="2,3,0,9"
@@ -97,7 +101,7 @@
                        DataContext="{Binding Output}"
                        Text="{Binding Path=Path, UpdateSourceTrigger=PropertyChanged}"
                        AllowDrop="True" PreviewDragOver="OnFileDragOver" PreviewDrop="OnFileDrop"
-                       ToolTip="Type or paste a path, or drop a file here." />
+                       ToolTip="Type or paste a path, or drop a file anywhere in this panel. Two files at once fill both boxes." />
               <Button Grid.Row="2" Grid.Column="2" Content="Browse…" Margin="8,0,0,0"
                       Style="{StaticResource SecondaryButton}" Command="{Binding BrowseOutputCommand}" />
               <TextBlock Grid.Row="3" Grid.Column="1" Margin="2,3,0,0"
