@@ -95,7 +95,7 @@ public sealed class MainViewModel : ObservableObject
         BrowseInputCommand = new RelayCommand(() => Browse(Input));
         BrowseOutputCommand = new RelayCommand(() => Browse(Output));
         SwapFilesCommand = new RelayCommand(SwapFiles);
-        PickKeyColumnsCommand = new RelayCommand(() => PickColumns("Key columns", "Rows are paired on these columns. They must exist in both files.", KeyColumns, v => KeyColumns = v));
+        PickKeyColumnsCommand = new RelayCommand(() => PickColumns("Key columns", "Rows are paired on these columns. They must exist in both files. Drag a column by its grip to reorder them - the one at the top is the first key.", KeyColumns, v => KeyColumns = v));
         PickCompareColumnsCommand = new RelayCommand(() => PickColumns("Compare columns", "Columns compared once rows are paired. Leave empty to compare every column the two files share.", CompareColumns, v => CompareColumns = v));
         PickSkipColumnsCommand = new RelayCommand(() => PickColumns("Skip columns", "Differences in these columns are ignored.", SkipColumns, v => SkipColumns = v));
         ClearResultsCommand = new RelayCommand(ClearResults);
@@ -842,7 +842,19 @@ public sealed class MainViewModel : ObservableObject
         foreach (string name in SplitList(current).Where(n => seen.Add(TextKey.Canonical(n))))
             choices.Add(new ColumnChoice { Name = name, Availability = "not in either file", IsSelected = true });
 
-        return choices;
+        // The columns already chosen come first, in the order they are already in, and the rest of the
+        // headers follow. The picker hands its list back in the order it ends up in, so opening it on a
+        // list in file order would quietly undo an arrangement the moment it was confirmed.
+        Dictionary<string, ColumnChoice> byName = choices.ToDictionary(c => TextKey.Canonical(c.Name), StringComparer.OrdinalIgnoreCase);
+        List<ColumnChoice> ordered = [];
+        HashSet<ColumnChoice> placed = [];
+
+        foreach (string name in SplitList(current))
+            if (byName.TryGetValue(TextKey.Canonical(name), out ColumnChoice? chosen) && placed.Add(chosen))
+                ordered.Add(chosen);
+
+        ordered.AddRange(choices.Where(c => !placed.Contains(c)));
+        return ordered;
     }
 
     private void LoadSettings()
