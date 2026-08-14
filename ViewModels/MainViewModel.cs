@@ -61,6 +61,10 @@ public sealed class MainViewModel : ObservableObject
 
     private ColumnMismatch? _columnMismatch;
 
+    // The last run, kept whole for the Excel report; the grids hold only a trimmed projection of it.
+    private ComparisonResult? _result;
+    private ComparisonOptions? _resultOptions;
+
     private ICollectionView? _differencesView;
     private ICollectionView? _missingRowsView;
     private ICollectionView? _extraRowsView;
@@ -95,7 +99,7 @@ public sealed class MainViewModel : ObservableObject
         BrowseInputCommand = new RelayCommand(() => Browse(Input));
         BrowseOutputCommand = new RelayCommand(() => Browse(Output));
         SwapFilesCommand = new RelayCommand(SwapFiles);
-        PickKeyColumnsCommand = new RelayCommand(() => PickColumns("Key columns", "Rows are paired on these columns. They must exist in both files.", KeyColumns, v => KeyColumns = v));
+        PickKeyColumnsCommand = new RelayCommand(() => PickColumns("Key columns", "Rows are paired on these columns. They must exist in both files. Drag a column by its grip to reorder them - the one at the top is the first key.", KeyColumns, v => KeyColumns = v));
         PickCompareColumnsCommand = new RelayCommand(() => PickColumns("Compare columns", "Columns compared once rows are paired. Leave empty to compare every column the two files share.", CompareColumns, v => CompareColumns = v));
         PickSkipColumnsCommand = new RelayCommand(() => PickColumns("Skip columns", "Differences in these columns are ignored.", SkipColumns, v => SkipColumns = v));
         ClearResultsCommand = new RelayCommand(ClearResults);
@@ -105,6 +109,7 @@ public sealed class MainViewModel : ObservableObject
         CopyReportCommand = new RelayCommand(CopyReport, () => ReportText.Length > 0);
         ExportReportCommand = new RelayCommand(ExportReport, () => ReportText.Length > 0);
         ExportDifferencesCommand = new RelayCommand(ExportDifferences, () => HasResult);
+        ExportExcelReportCommand = new RelayCommand(ExportExcelReport, () => HasResult);
         ShowCommandLineHelpCommand = new RelayCommand(() => _interaction.ShowText("Command line", CommandLine.HelpText));
         ShowAboutCommand = new RelayCommand(ShowAbout);
     }
@@ -126,6 +131,7 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand CopyReportCommand { get; }
     public RelayCommand ExportReportCommand { get; }
     public RelayCommand ExportDifferencesCommand { get; }
+    public RelayCommand ExportExcelReportCommand { get; }
     public ICommand ShowCommandLineHelpCommand { get; }
     public ICommand ShowAboutCommand { get; }
 
@@ -144,7 +150,11 @@ public sealed class MainViewModel : ObservableObject
     /// </summary>
     public IReadOnlyList<string> EncodingChoices { get; } = [DetectLabel, .. TextFile.SupportedEncodings];
 
-    public IReadOnlyList<string> DelimiterChoices { get; } = [DetectLabel, ";", ",", "\\t", "|"];
+    /// <summary>
+    /// The box is editable, so any separator can be typed; these are the ones worth not typing. |" is
+    /// offered but never detected - in a header line it cannot be told apart from a plain pipe.
+    /// </summary>
+    public IReadOnlyList<string> DelimiterChoices { get; } = [DetectLabel, ";", ",", "\\t", "|", "|\""];
 
     private const string DetectLabel = "detect";
 
@@ -555,6 +565,8 @@ public sealed class MainViewModel : ObservableObject
 
             StatusText = "Comparing…";
             ComparisonResult result = await Task.Run(() => new FileComparisonEngine(options).Compare(input, output));
+            _result = result;
+            _resultOptions = options;
             (IReadOnlyList<DifferenceRow> differences, IReadOnlyList<SingleSideRow> missing, IReadOnlyList<SingleSideRow> extra, string report) =
                 await Task.Run(() => Project(result, options));
 
@@ -581,6 +593,7 @@ public sealed class MainViewModel : ObservableObject
             ExitCode = result.IsMatch ? ExitMatch : ExitDifferences;
             StatusText = $"Compared at {DateTime.Now:HH:mm:ss}.";
             ExportDifferencesCommand.RaiseCanExecuteChanged();
+            ExportExcelReportCommand.RaiseCanExecuteChanged();
         }
         catch (Exception exception)
         {
@@ -842,7 +855,19 @@ public sealed class MainViewModel : ObservableObject
         foreach (string name in SplitList(current).Where(n => seen.Add(TextKey.Canonical(n))))
             choices.Add(new ColumnChoice { Name = name, Availability = "not in either file", IsSelected = true });
 
-        return choices;
+        // The columns already chosen come first, in the order they are already in, and the rest of the
+        // headers follow. The picker hands its list back in the order it ends up in, so opening it on a
+        // list in file order would quietly undo an arrangement the moment it was confirmed.
+        Dictionary<string, ColumnChoice> byName = choices.ToDictionary(c => TextKey.Canonical(c.Name), StringComparer.OrdinalIgnoreCase);
+        List<ColumnChoice> ordered = [];
+        HashSet<ColumnChoice> placed = [];
+
+        foreach (string name in SplitList(current))
+            if (byName.TryGetValue(TextKey.Canonical(name), out ColumnChoice? chosen) && placed.Add(chosen))
+                ordered.Add(chosen);
+
+        ordered.AddRange(choices.Where(c => !placed.Contains(c)));
+        return ordered;
     }
 
     private void LoadSettings()
@@ -891,6 +916,34 @@ public sealed class MainViewModel : ObservableObject
     {
         _interaction.CopyToClipboard(ReportText);
         StatusText = "Report copied to the clipboard.";
+    }
+
+    /// <summary>
+    /// The whole run as a workbook, a sheet to each kind of outcome. It works from the result itself
+    /// rather than from the grids, so it carries every row rather than the Max rows the window lists,
+    /// and the options it reports are the ones the run actually used rather than whatever the boxes
+    /// have been changed to since.
+    /// </summary>
+    private void ExportExcelReport()
+    {
+        if (_result is null || _resultOptions is null)
+            return;
+
+        string? path = _interaction.BrowseForSave(
+            "Export report as Excel", "Excel workbook (*.xlsx)|*.xlsx|All files (*.*)|*.*", SuggestExportName("xlsx"), null);
+
+        if (path is null)
+            return;
+
+        try
+        {
+            XlsxReport.Write(path, _result, _resultOptions);
+            StatusText = $"Report written to {path}";
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = $"Could not write '{path}': {exception.Message}";
+        }
     }
 
     private void ExportReport()

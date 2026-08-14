@@ -97,7 +97,10 @@ public static class CommandLine
                                         as equal. 0 (default) requires them to be exactly
                                         equal; 1 lets 100 match 99 to 101, 2 lets it match
                                         98 to 102. Needs --similar-match.
-          -d, --delimiter <char>        Delimiter for text files. Default: auto-detect.
+          -d, --delimiter <text>        Delimiter for text files, of any length. Default:
+                                        auto-detect, which tries ; , tab and |. A delimiter
+                                        holding a quote, such as |", turns quoting off: the
+                                        line is cut on the delimiter and read as written.
           -e, --encoding <name>         Encoding of the text files: utf-8, utf-16, utf-16be,
                                         utf-32, ascii, latin1 or windows-1252.
                                         Default: detect (BOM, else UTF-8, else Windows-1252).

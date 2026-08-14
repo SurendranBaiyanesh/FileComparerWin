@@ -5,7 +5,7 @@
         MinHeight="360" MinWidth="380"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        Background="{StaticResource WindowBrush}"
+        Background="{StaticResource AppBackgroundBrush}"
         Foreground="{StaticResource TextBrush}"
         FontFamily="Segoe UI"
         FontSize="13"
@@ -50,16 +50,33 @@
     <Border Background="White" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" CornerRadius="4">
       <ListBox x:Name="ColumnList" BorderThickness="0" Background="Transparent"
                ScrollViewer.HorizontalScrollBarVisibility="Auto"
-               HorizontalContentAlignment="Stretch">
+               HorizontalContentAlignment="Stretch"
+               PreviewMouseMove="OnListMouseMove"
+               PreviewMouseLeftButtonUp="OnListMouseUp"
+               LostMouseCapture="OnListLostCapture">
         <ListBox.ItemTemplate>
           <DataTemplate>
-            <CheckBox IsChecked="{Binding IsSelected}" Margin="2,3" VerticalContentAlignment="Center">
-              <StackPanel Orientation="Horizontal">
-                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding Availability}" Style="{StaticResource Hint}" Margin="10,0,0,0"
-                           VerticalAlignment="Center" TextTrimming="None" />
-              </StackPanel>
-            </CheckBox>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+
+              <!-- The grip, rather than the whole row: a row is one large checkbox, and a press that
+                   might be the start of a drag is not a press that should tick anything. -->
+              <TextBlock Grid.Column="0" Text="⋮⋮" Margin="4,0,6,0" VerticalAlignment="Center"
+                         Foreground="{StaticResource MutedBrush}" Cursor="SizeNS"
+                         ToolTip="Drag to reorder. The column at the top is the first one."
+                         PreviewMouseLeftButtonDown="OnGripPressed" />
+
+              <CheckBox Grid.Column="1" IsChecked="{Binding IsSelected}" Margin="2,3" VerticalContentAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding Availability}" Style="{StaticResource Hint}" Margin="10,0,0,0"
+                             VerticalAlignment="Center" TextTrimming="None" />
+                </StackPanel>
+              </CheckBox>
+            </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>

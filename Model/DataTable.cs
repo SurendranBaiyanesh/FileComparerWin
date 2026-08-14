@@ -5,12 +5,14 @@ public sealed class DataTable
 {
     private readonly Dictionary<string, int> _columnIndex;
 
-    public DataTable(string sourcePath, string formatName, IReadOnlyList<string> columns, IReadOnlyList<DataRow> rows)
+    public DataTable(string sourcePath, string formatName, IReadOnlyList<string> columns, IReadOnlyList<DataRow> rows,
+                     string? delimiter = null)
     {
         SourcePath = sourcePath;
         FormatName = formatName;
         Columns = columns;
         Rows = rows;
+        Delimiter = delimiter;
 
         // Indexed on the canonical form so a header written with combining accents still answers to
         // the same name typed with precomposed ones.
@@ -23,6 +25,13 @@ public sealed class DataTable
     public string FormatName { get; }
     public IReadOnlyList<string> Columns { get; }
     public IReadOnlyList<DataRow> Rows { get; }
+
+    /// <summary>
+    /// What separated the values in the file, for the formats that separate them with anything. Null
+    /// for a workbook, an XML document or a JSON array, which have no separator to speak of. Reporting
+    /// keeps it so that a row can be shown again in the shape it was written in.
+    /// </summary>
+    public string? Delimiter { get; }
 
     public bool HasColumn(string name) => _columnIndex.ContainsKey(TextKey.Canonical(name));
 

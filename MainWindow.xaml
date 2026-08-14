@@ -5,7 +5,7 @@
         Height="880" Width="1240"
         MinHeight="700" MinWidth="1020"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource WindowBrush}"
+        Background="{StaticResource AppBackgroundBrush}"
         Foreground="{StaticResource TextBrush}"
         FontFamily="Segoe UI"
         FontSize="13"
@@ -14,7 +14,8 @@
   <DockPanel>
 
     <!-- ================================================================ menu -->
-    <Menu DockPanel.Dock="Top" Background="White" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="0,0,0,1" Padding="4,2">
+    <!-- Transparent rather than white, so the wash behind it runs to the top edge of the window. -->
+    <Menu DockPanel.Dock="Top" Background="Transparent" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="0,0,0,1" Padding="4,2">
       <MenuItem Header="_File">
         <MenuItem Header="_Load settings…" Command="{Binding LoadSettingsCommand}" />
         <MenuItem Header="_Save settings" Command="{Binding SaveSettingsCommand}" />
@@ -26,6 +27,9 @@
         <MenuItem Header="_Copy report" Command="{Binding CopyReportCommand}" />
         <MenuItem Header="_Export report…" Command="{Binding ExportReportCommand}" />
         <MenuItem Header="Export _differences as CSV…" Command="{Binding ExportDifferencesCommand}" />
+        <Separator />
+        <MenuItem Header="Export as E_xcel workbook…" Command="{Binding ExportExcelReportCommand}"
+                  ToolTip="Six sheets: overview, matching values, additional in the output, missing from the output, similar matches, and the differing values." />
       </MenuItem>
       <MenuItem Header="_Help">
         <MenuItem Header="_Command line…" Command="{Binding ShowCommandLineHelpCommand}" />
@@ -63,7 +67,11 @@
           <ColumnDefinition Width="2*" MinWidth="380" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Style="{StaticResource Card}">
+        <!-- The whole panel takes a drop, not only the two boxes: a path box is a few pixels tall, and
+             a file dragged towards one is easily let go of just beside it. -->
+        <Border x:Name="FilesCard" Grid.Column="0" Style="{StaticResource Card}"
+                AllowDrop="True" DragOver="OnFileDragOver" Drop="OnCardDrop"
+                PreviewDragEnter="OnCardDragEnter" DragLeave="OnCardDragLeave" PreviewDrop="OnCardPreviewDrop">
           <StackPanel>
             <TextBlock Text="FILES" Style="{StaticResource SectionHeader}" />
             <Grid>
@@ -85,7 +93,7 @@
                        DataContext="{Binding Input}"
                        Text="{Binding Path=Path, UpdateSourceTrigger=PropertyChanged}"
                        AllowDrop="True" PreviewDragOver="OnFileDragOver" PreviewDrop="OnFileDrop"
-                       ToolTip="Type or paste a path, or drop a file here." />
+                       ToolTip="Type or paste a path, or drop a file anywhere in this panel. Two files at once fill both boxes." />
               <Button Grid.Row="0" Grid.Column="2" Content="Browse…" Margin="8,0,0,0"
                       Style="{StaticResource SecondaryButton}" Command="{Binding BrowseInputCommand}" />
               <TextBlock Grid.Row="1" Grid.Column="1" Margin="2,3,0,9"
@@ -97,7 +105,7 @@
                        DataContext="{Binding Output}"
                        Text="{Binding Path=Path, UpdateSourceTrigger=PropertyChanged}"
                        AllowDrop="True" PreviewDragOver="OnFileDragOver" PreviewDrop="OnFileDrop"
-                       ToolTip="Type or paste a path, or drop a file here." />
+                       ToolTip="Type or paste a path, or drop a file anywhere in this panel. Two files at once fill both boxes." />
               <Button Grid.Row="2" Grid.Column="2" Content="Browse…" Margin="8,0,0,0"
                       Style="{StaticResource SecondaryButton}" Command="{Binding BrowseOutputCommand}" />
               <TextBlock Grid.Row="3" Grid.Column="1" Margin="2,3,0,0"
@@ -166,7 +174,7 @@
               <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,6" IsEditable="True"
                         ItemsSource="{Binding DelimiterChoices}"
                         Text="{Binding SelectedDelimiter, UpdateSourceTrigger=PropertyChanged}"
-                        ToolTip="Delimiter for text files. 'detect' reads it from the header line." />
+                        ToolTip="Delimiter for text files. 'detect' reads it from the header line, trying ; , tab and |. Longer delimiters are allowed; |&quot; has to be chosen, since detection cannot tell it from a plain pipe." />
 
               <TextBlock Grid.Row="2" Grid.Column="1" Text="Encoding" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
               <ComboBox Grid.Row="2" Grid.Column="2" Margin="0,0,0,6" IsEditable="True" IsReadOnly="True"

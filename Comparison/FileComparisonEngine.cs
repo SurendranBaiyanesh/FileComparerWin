@@ -28,7 +28,8 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
         List<RowMismatch> mismatches = new List<RowMismatch>();
         List<KeyedRow> missingInOutput = new List<KeyedRow>();
         List<KeyedRow> extraInOutput = new List<KeyedRow>();
-        int matched = 0;
+        List<MatchedRow> matchedRows = new List<MatchedRow>();
+        List<SimilarMatch> similarMatches = new List<SimilarMatch>();
 
         foreach ((string key, List<DataRow> inputRows) in inputGroups)
         {
@@ -41,11 +42,19 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
             int pairCount = Math.Min(inputRows.Count, outputRows.Count);
             for (int i = 0; i < pairCount; i++)
             {
-                List<ValueDifference> differences = CompareValues(input, inputRows[i], output, outputRows[i], comparedColumns);
-                if (differences.Count == 0)
-                    matched++;
+                (List<ValueDifference> differences, List<ValueDifference> similar) =
+                    CompareValues(input, inputRows[i], output, outputRows[i], comparedColumns);
+
+                string displayKey = DisplayKey(input, inputRows[i], keyColumns);
+
+                // A row with something genuinely wrong is a mismatch whatever else it also has, so the
+                // three lists divide the paired rows between them rather than overlapping.
+                if (differences.Count > 0)
+                    mismatches.Add(new RowMismatch(displayKey, inputRows[i], outputRows[i], differences));
+                else if (similar.Count > 0)
+                    similarMatches.Add(new SimilarMatch(displayKey, inputRows[i], outputRows[i], similar));
                 else
-                    mismatches.Add(new RowMismatch(DisplayKey(input, inputRows[i], keyColumns), inputRows[i], outputRows[i], differences));
+                    matchedRows.Add(new MatchedRow(displayKey, inputRows[i], outputRows[i]));
             }
 
             // Duplicate keys: whatever is left over on either side has no counterpart.
@@ -64,7 +73,8 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
             ComparedColumns = comparedColumns,
             SkippedColumns = columns.Skipped,
             SkipColumnWarnings = columns.Warnings,
-            MatchedRowCount = matched,
+            MatchedRows = matchedRows,
+            SimilarMatches = similarMatches,
             ValueMismatches = mismatches,
             MissingInOutput = missingInOutput,
             ExtraInOutput = extraInOutput,
@@ -253,25 +263,33 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
         return groups;
     }
 
-    private List<ValueDifference> CompareValues(DataTable input, DataRow inputRow, DataTable output, DataRow outputRow, List<string> columns)
+    /// <summary>
+    /// What disagreed, and what only agreed because the range allowed it. The two are kept apart so a
+    /// report can show which matches rest on a tolerance; note that values written differently but
+    /// meaning the same number - 123.00 and 123 - are equal outright and are not among the second lot.
+    /// </summary>
+    private (List<ValueDifference> Differences, List<ValueDifference> Similar) CompareValues(
+        DataTable input, DataRow inputRow, DataTable output, DataRow outputRow, List<string> columns)
     {
         List<ValueDifference> differences = new List<ValueDifference>();
+        List<ValueDifference> similar = new List<ValueDifference>();
 
         foreach (string column in columns)
         {
             string inputValue = input.GetValue(inputRow, column);
             string outputValue = output.GetValue(outputRow, column);
 
-            if (!ValuesMatch(inputValue, outputValue))
+            if (string.Equals(Normalize(inputValue), Normalize(outputValue), StringComparison.Ordinal))
+                continue;
+
+            if (IsWithinRange(inputValue, outputValue))
+                similar.Add(new ValueDifference(column, inputValue, outputValue));
+            else
                 differences.Add(new ValueDifference(column, inputValue, outputValue));
         }
 
-        return differences;
+        return (differences, similar);
     }
-
-    private bool ValuesMatch(string inputValue, string outputValue) =>
-        string.Equals(Normalize(inputValue), Normalize(outputValue), StringComparison.Ordinal)
-        || IsWithinRange(inputValue, outputValue);
 
     /// <summary>
     /// Two numbers no further apart than SimilarMatchRange. Both sides have to be numbers: a range is a
