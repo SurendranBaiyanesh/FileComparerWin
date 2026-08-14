@@ -33,7 +33,6 @@ public static class CommandLine
             else if (Matches(arg, "--output", "-o")) options.OutputFilePath = Next() ?? options.OutputFilePath;
             else if (Matches(arg, "--columns", "-c")) options.KeyColumns = SplitList(Next());
             else if (Matches(arg, "--compare-columns")) options.CompareColumns = SplitList(Next());
-            else if (Matches(arg, "--skip", "--skip-columns", "-x")) options.SkipColumns = SplitList(Next());
             else if (Matches(arg, "--show-non-matching", "-s")) options.ShowNonMatchingRows = ParseBool(Next());
             else if (Matches(arg, "--max-rows")) options.MaxNonMatchingRowsToShow = ParseInt(Next(), options.MaxNonMatchingRowsToShow);
             else if (Matches(arg, "--ignore-case")) options.IgnoreCase = ParseBool(Next());
@@ -85,8 +84,6 @@ public static class CommandLine
                                         or "Name,PersonNumber".
               --compare-columns <list>  Columns to compare once rows are paired.
                                         Default: every column the two files share.
-          -x, --skip <list>             Column(s) to leave out of the comparison, comma
-                                        separated. Differences there are ignored.
           -s, --show-non-matching <b>   Show the non-matching rows (true/false).
               --max-rows <n>            Max rows listed per category. 0 = all.
               --ignore-case <bool>      Compare values case-insensitively.

@@ -20,7 +20,6 @@ public sealed class ComparisonOptions
     /// Columns left out of the comparison, whatever else selected them. Differences in these columns
     /// do not make a row non-matching.
     /// </summary>
-    public List<string> SkipColumns { get; set; } = [];
 
     public bool ShowNonMatchingRows { get; set; } = true;
 

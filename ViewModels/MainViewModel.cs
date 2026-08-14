@@ -24,7 +24,6 @@ public sealed class MainViewModel : ObservableObject
 
     private string _keyColumns = string.Empty;
     private string _compareColumns = string.Empty;
-    private string _skipColumns = string.Empty;
     private bool _showNonMatchingRows = true;
     private string _maxRowsText = "0";
     private bool _ignoreCase;
@@ -101,7 +100,6 @@ public sealed class MainViewModel : ObservableObject
         SwapFilesCommand = new RelayCommand(SwapFiles);
         PickKeyColumnsCommand = new RelayCommand(() => PickColumns("Key columns", "Rows are paired on these columns. They must exist in both files. Drag a column by its grip to reorder them - the one at the top is the first key.", KeyColumns, v => KeyColumns = v));
         PickCompareColumnsCommand = new RelayCommand(() => PickColumns("Compare columns", "Columns compared once rows are paired. Leave empty to compare every column the two files share.", CompareColumns, v => CompareColumns = v));
-        PickSkipColumnsCommand = new RelayCommand(() => PickColumns("Skip columns", "Differences in these columns are ignored.", SkipColumns, v => SkipColumns = v));
         ClearResultsCommand = new RelayCommand(ClearResults);
         LoadSettingsCommand = new RelayCommand(LoadSettings);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
@@ -122,7 +120,6 @@ public sealed class MainViewModel : ObservableObject
     public ICommand SwapFilesCommand { get; }
     public ICommand PickKeyColumnsCommand { get; }
     public ICommand PickCompareColumnsCommand { get; }
-    public ICommand PickSkipColumnsCommand { get; }
     public ICommand CompareCommand => _compareCommand;
     public ICommand ClearResultsCommand { get; }
     public ICommand LoadSettingsCommand { get; }
@@ -190,12 +187,6 @@ public sealed class MainViewModel : ObservableObject
     {
         get => _compareColumns;
         set => SetProperty(ref _compareColumns, value);
-    }
-
-    public string SkipColumns
-    {
-        get => _skipColumns;
-        set => SetProperty(ref _skipColumns, value);
     }
 
     public bool ShowNonMatchingRows
@@ -322,7 +313,7 @@ public sealed class MainViewModel : ObservableObject
         private set => SetProperty(ref _verdictDetail, value);
     }
 
-    /// <summary>The key, compared and skipped columns the run actually used.</summary>
+    /// <summary>The key and compared columns the run actually used.</summary>
     public string ComparisonSummary
     {
         get => _comparisonSummary;
@@ -655,16 +646,9 @@ public sealed class MainViewModel : ObservableObject
     /// to the width of the banner, so each list is counted as well as named: the count survives the
     /// trimming, and the names in full are on the tooltip.
     /// </summary>
-    private static string BuildComparisonSummary(ComparisonResult result)
-    {
-        string summary = $"Keys: {string.Join(", ", result.KeyColumns)}   ·   " +
-                         $"Compared ({result.ComparedColumns.Count}): {string.Join(", ", result.ComparedColumns)}";
-
-        if (result.SkippedColumns.Count > 0)
-            summary += $"   ·   Skipped ({result.SkippedColumns.Count}): {string.Join(", ", result.SkippedColumns)}";
-
-        return summary;
-    }
+    private static string BuildComparisonSummary(ComparisonResult result) =>
+        $"Keys: {string.Join(", ", result.KeyColumns)}   ·   " +
+        $"Compared ({result.ComparedColumns.Count}): {string.Join(", ", result.ComparedColumns)}";
 
     /// <summary>
     /// Puts the rows behind the grids and wraps each list in a view the column filters can narrow. The
@@ -751,7 +735,6 @@ public sealed class MainViewModel : ObservableObject
         OutputFilePath = Output.Path,
         KeyColumns = SplitList(KeyColumns),
         CompareColumns = SplitList(CompareColumns),
-        SkipColumns = SplitList(SkipColumns),
         ShowNonMatchingRows = ShowNonMatchingRows,
         MaxNonMatchingRowsToShow = ParseMaxRows(MaxRowsText),
         IgnoreCase = IgnoreCase,
@@ -769,7 +752,6 @@ public sealed class MainViewModel : ObservableObject
         Output.Path = options.OutputFilePath;
         KeyColumns = string.Join(", ", options.KeyColumns);
         CompareColumns = string.Join(", ", options.CompareColumns);
-        SkipColumns = string.Join(", ", options.SkipColumns);
         ShowNonMatchingRows = options.ShowNonMatchingRows;
         MaxRowsText = options.MaxNonMatchingRowsToShow.ToString(CultureInfo.InvariantCulture);
         IgnoreCase = options.IgnoreCase;

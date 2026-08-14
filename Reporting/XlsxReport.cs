@@ -81,7 +81,6 @@ public static class XlsxReport
 
         sheet.Add("Key columns", string.Join(", ", result.KeyColumns));
         sheet.Add("Compared columns", string.Join(", ", result.ComparedColumns));
-        sheet.Add("Skipped columns", result.SkippedColumns.Count == 0 ? "none" : string.Join(", ", result.SkippedColumns));
         sheet.Blank();
 
         // Two counts, because they answer different questions and would otherwise look like a
@@ -112,7 +111,7 @@ public static class XlsxReport
         // would be a worse thing than a long one, so every row is written here whatever that says.
         sheet.Add("Note", "Every row is written to the sheets, whatever Max rows is set to.");
 
-        List<string> warnings = [.. result.SkipColumnWarnings, .. result.DuplicateKeyWarnings, .. result.OptionWarnings];
+        List<string> warnings = [.. result.DuplicateKeyWarnings, .. result.OptionWarnings];
         sheet.Blank();
         sheet.Add("Warnings", warnings.Count == 0 ? "none" : $"{warnings.Count}");
         foreach (string warning in warnings)

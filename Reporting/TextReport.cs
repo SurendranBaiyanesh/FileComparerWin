@@ -42,9 +42,6 @@ public static class TextReport
         text.AppendLine($"  Key column(s) : {string.Join(", ", result.KeyColumns)}");
         text.AppendLine($"  Compared      : {string.Join(", ", result.ComparedColumns)}");
 
-        if (result.SkippedColumns.Count > 0)
-            text.AppendLine($"  Skipped       : {string.Join(", ", result.SkippedColumns)}");
-
         // A run that passes only because 123.00 was read as 123, or because 99 was near enough to 100,
         // should say so.
         if (options.SimilarMatch)
@@ -99,7 +96,6 @@ public static class TextReport
     {
         List<string> warnings = new List<string>();
 
-        warnings.AddRange(result.SkipColumnWarnings);
         warnings.AddRange(result.OptionWarnings);
         warnings.AddRange(result.DuplicateKeyWarnings);
 

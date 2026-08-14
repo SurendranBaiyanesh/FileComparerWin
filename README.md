@@ -93,12 +93,12 @@ the overview are numbers. The workbook is built straight into the Open XML packa
 | | |
 | --- | --- |
 | **Files** | Input and output paths, with what was read from each, and a line in red when the two files do not carry the same columns. |
-| **Columns** | Key, Compare and Skip. **Pick…** ticks names off the headers the files actually have, so a column called `Name des Versicherten/Begünstigten` need not be typed. |
+| **Columns** | Key and Compare. **Pick…** ticks names off the headers the files actually have, so a column called `Name des Versicherten/Begünstigten` need not be typed. |
 | **Options** | Ignore case, trim values, similar match, list non-matching rows, max rows, delimiter, encoding, worksheet. |
 | **Verdict** | SUCCESS or FAILED, the columns the run used, and the six counts. |
 | **Value differences** | One row per differing column, with the key, both values and both line numbers. Select a row to see the two source rows in full. |
 | **Missing / Extra** | Rows present on one side only. |
-| **Warnings** | Skipped names that changed nothing, duplicate keys, options that could not take effect. |
+| **Warnings** | Duplicate keys, and options that could not take effect. |
 | **Report** | The console tool's report as text — copy it, or export it. |
 
 Grids sort by any column: sorting the differences by *Column* answers "is one field behind every
@@ -122,7 +122,6 @@ Every option the console tool has, under the name the settings file uses.
 | Input / Output | `InputFilePath` / `OutputFilePath` | The two files. |
 | Key | `KeyColumns` | Key column(s), e.g. `PersonNumber` or `Name,PersonNumber`. |
 | Compare | `CompareColumns` | Columns compared once rows are paired. Default: every column the two files share. |
-| Skip | `SkipColumns` | Column(s) left out of the comparison. |
 | List non-matching rows | `ShowNonMatchingRows` | List the non-matching rows. |
 | Max rows | `MaxNonMatchingRowsToShow` | Cap on rows listed per category. `0` = all. |
 | Ignore case | `IgnoreCase` | Compare values case-insensitively. |
@@ -181,7 +180,7 @@ and eleven thousand in the other half; anything ambiguous is compared as the tex
 guessed at.
 
 Two consequences worth knowing. Leading zeros stop counting, so `007` and `7` become equal — if a
-padded code must stay distinct, leave the option off or skip that column. And because it applies
+padded code must stay distinct, leave the option off or leave that column out of Compare. And because it applies
 wherever values are matched, it also affects **which rows pair up**: a key column holding `1` in one
 file and `01` in the other will pair under SimilarMatch where it previously did not.
 
@@ -239,17 +238,12 @@ The commonest reason for a column to be on one side only is the encoding: a Wind
 as UTF-8 turns `Begünstigten` into `Beg�nstigten`, which is a different name. The error says so when
 it finds a replacement character in a header, and [Encoding](#encoding) is the setting that fixes it.
 
-## Skipping columns
+## Leaving columns out
 
-Name a column and it stops counting towards the result — useful for the export timestamp or running
-number that differs on every row and means nothing. Several at once, comma separated, and matched
-without regard to case.
-
-Skipping subtracts from whatever was going to be compared, so it also narrows an explicit Compare
-list. Rows are still paired on the key columns and still counted as missing or extra; only value
-differences in the skipped columns stop mattering. The Warnings tab says when a skipped name changed
-nothing — an unknown column, or a key column, which pairs rows and is never among the compared ones.
-Skipping every comparable column is an error rather than a comparison that trivially succeeds.
+Name the columns to compare and everything else stops counting — the export timestamp or running
+number that differs on every row and means nothing simply goes unnamed. Rows are still paired on the
+key columns and still counted as missing or extra; only value differences in the unnamed columns stop
+mattering.
 
 ## Formats
 
