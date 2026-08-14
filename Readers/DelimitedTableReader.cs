@@ -38,7 +38,8 @@ public sealed class DelimitedTableReader : ITableReader
             records.Add((i + 1, SplitLine(lines[i], delimiter)));
         }
 
-        return TableBuilder.Build(path, $"{FormatName} ('{Describe(delimiter)}' separated, {content.EncodingName})", header, records);
+        return TableBuilder.Build(path, $"{FormatName} ('{Describe(delimiter)}' separated, {content.EncodingName})",
+                                  header, records, delimiter);
     }
 
     private static string ResolveDelimiter(string configured, string headerLine)

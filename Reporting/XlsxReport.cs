@@ -297,11 +297,21 @@ public static class XlsxReport
     /// line is about is left out - it is already in front of the reader - and so are the key columns,
     /// which are the first cell of every line.
     /// </summary>
-    private static string OtherValues(ComparisonResult result, DataTable table, DataRow row, string subject) =>
-        string.Join("; ", table.Columns
+    private static string OtherValues(ComparisonResult result, DataTable table, DataRow row, string subject)
+    {
+        IEnumerable<string> columns = table.Columns
             .Where(c => !SameColumn(c, subject))
-            .Where(c => !result.KeyColumns.Any(k => SameColumn(k, c)))
-            .Select(c => $"{c}={table.GetValue(row, c)}"));
+            .Where(c => !result.KeyColumns.Any(k => SameColumn(k, c)));
+
+        // A delimited file gets its own separator back, so the cell reads the way the row reads in the
+        // file it came from: with a |" file, 70986830|"8111|" rather than Test=70986830; Test1=8111.
+        // A workbook, an XML document or a JSON array has no separator to borrow, so for those each
+        // value keeps the name of the column it came from - otherwise the cell is a row of bare values
+        // with nothing to say which is which.
+        return table.Delimiter is { Length: > 0 } delimiter
+            ? string.Concat(columns.Select(c => table.GetValue(row, c) + delimiter))
+            : string.Join("; ", columns.Select(c => $"{c}={table.GetValue(row, c)}"));
+    }
 
     /// <summary>Names matched the way <see cref="DataTable"/> matches them, so an accent written two ways is one column.</summary>
     private static bool SameColumn(string left, string right) =>

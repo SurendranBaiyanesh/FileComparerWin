@@ -17,7 +17,12 @@ public interface ITableReader
 /// (a header such as "A;B;C;" yields three columns), and ragged rows are squared off.</summary>
 public static class TableBuilder
 {
-    public static DataTable Build(string path, string formatName, IReadOnlyList<string> header, List<(int LineNumber, List<string> Values)> records)
+    /// <summary>
+    /// <paramref name="delimiter"/> is what separated the values, for the readers that had one; it is
+    /// carried on the table so that reporting can show a row in the shape the file wrote it.
+    /// </summary>
+    public static DataTable Build(string path, string formatName, IReadOnlyList<string> header,
+                                  List<(int LineNumber, List<string> Values)> records, string? delimiter = null)
     {
         List<string> columns = TrimTrailingEmpty(header);
         if (columns.Count == 0)
@@ -39,7 +44,7 @@ public static class TableBuilder
             rows.Add(new DataRow(lineNumber, padded));
         }
 
-        return new DataTable(path, formatName, columns, rows);
+        return new DataTable(path, formatName, columns, rows, delimiter);
     }
 
     private static List<string> TrimTrailingEmpty(IReadOnlyList<string> values)
