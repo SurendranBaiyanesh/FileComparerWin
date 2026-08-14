@@ -9,10 +9,16 @@ namespace FileComparerWindows.Comparison;
 public sealed class FileComparisonEngine(ComparisonOptions options)
 {
     // Unit separator: cannot occur in real data, so composite keys stay unambiguous.
+    #region Constants
+
     private const char KeySeparator = (char)0x1F;
 
     // What a decoder substitutes for bytes it could not make sense of.
     private const char ReplacementCharacter = (char)0xFFFD;
+
+    #endregion
+
+    #region Public methods
 
     public ComparisonResult Compare(DataTable input, DataTable output)
     {
@@ -80,6 +86,39 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
         };
     }
 
+    /// <summary>
+    /// The columns that are on one side only, or null when the two headers agree. Public because the
+    /// window says so under the file boxes as soon as both files have been read, rather than leaving
+    /// the user to name key columns and press Compare to learn what the two headers already said.
+    /// </summary>
+    public static ColumnMismatch? FindColumnMismatch(DataTable input, DataTable output)
+    {
+        List<string> onlyInInput = [.. input.Columns.Where(c => !output.HasColumn(c))];
+        List<string> onlyInOutput = [.. output.Columns.Where(c => !input.HasColumn(c))];
+
+        if (onlyInInput.Count == 0 && onlyInOutput.Count == 0)
+            return null;
+
+        List<string> sides = [];
+        if (onlyInInput.Count > 0)
+            sides.Add($"only in the input file: {string.Join(", ", onlyInInput)}");
+
+        if (onlyInOutput.Count > 0)
+            sides.Add($"only in the output file: {string.Join(", ", onlyInOutput)}");
+
+        string headline = $"The two files do not have the same columns - {string.Join("; ", sides)}.";
+
+        return new ColumnMismatch(headline,
+            $"{headline}{Environment.NewLine}" +
+            $"  Input columns : {string.Join(", ", input.Columns)}{Environment.NewLine}" +
+            $"  Output columns: {string.Join(", ", output.Columns)}" +
+            EncodingHint(input, output));
+    }
+
+    #endregion
+
+    #region Private methods
+
     private void ValidateOptions()
     {
         if (options.SimilarMatchRange < 0)
@@ -108,35 +147,6 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
     {
         if (FindColumnMismatch(input, output) is { } mismatch)
             throw new InvalidOperationException(mismatch.Detail);
-    }
-
-    /// <summary>
-    /// The columns that are on one side only, or null when the two headers agree. Public because the
-    /// window says so under the file boxes as soon as both files have been read, rather than leaving
-    /// the user to name key columns and press Compare to learn what the two headers already said.
-    /// </summary>
-    public static ColumnMismatch? FindColumnMismatch(DataTable input, DataTable output)
-    {
-        List<string> onlyInInput = [.. input.Columns.Where(c => !output.HasColumn(c))];
-        List<string> onlyInOutput = [.. output.Columns.Where(c => !input.HasColumn(c))];
-
-        if (onlyInInput.Count == 0 && onlyInOutput.Count == 0)
-            return null;
-
-        List<string> sides = [];
-        if (onlyInInput.Count > 0)
-            sides.Add($"only in the input file: {string.Join(", ", onlyInInput)}");
-
-        if (onlyInOutput.Count > 0)
-            sides.Add($"only in the output file: {string.Join(", ", onlyInOutput)}");
-
-        string headline = $"The two files do not have the same columns - {string.Join("; ", sides)}.";
-
-        return new ColumnMismatch(headline,
-            $"{headline}{Environment.NewLine}" +
-            $"  Input columns : {string.Join(", ", input.Columns)}{Environment.NewLine}" +
-            $"  Output columns: {string.Join(", ", output.Columns)}" +
-            EncodingHint(input, output));
     }
 
     private List<string> ResolveKeyColumns(DataTable input, DataTable output)
@@ -319,6 +329,8 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
     private static IEnumerable<string> DescribeDuplicates(string side, Dictionary<string, List<DataRow>> groups) =>
         groups.Where(g => g.Value.Count > 1)
             .Select(g => $"{side} file has {g.Value.Count} rows with key '{g.Key.Replace(KeySeparator, '|')}' (lines {string.Join(", ", g.Value.Select(r => r.LineNumber))}).");
+
+    #endregion
 }
 
 /// <summary>

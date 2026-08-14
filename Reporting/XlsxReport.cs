@@ -17,10 +17,7 @@ namespace FileComparerWindows.Reporting;
 /// </summary>
 public static class XlsxReport
 {
-    private static readonly XNamespace Main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
-    private static readonly XNamespace DocumentRelationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-    private static readonly XNamespace PackageRelationships = "http://schemas.openxmlformats.org/package/2006/relationships";
-    private static readonly XNamespace ContentTypes = "http://schemas.openxmlformats.org/package/2006/content-types";
+    #region Constants
 
     // A relationship's Type is a plain URI in an attribute, not a namespace: XNamespace + "name" would
     // be written out as "{namespace}name" and leave a package Excel will not open.
@@ -33,6 +30,32 @@ public static class XlsxReport
     // column; wide enough and one long value pushes everything after it off the screen.
     private const int MinColumnWidth = 9;
     private const int MaxColumnWidth = 60;
+
+    /// <summary>
+    /// The one format the report defines, and the index it therefore has in cellXfs. Everything else
+    /// is left at the workbook's default.
+    /// </summary>
+    private const int HeaderStyle = 1;
+
+    #endregion
+
+    #region Fields
+
+    private static readonly XNamespace Main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+    private static readonly XNamespace DocumentRelationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+    private static readonly XNamespace PackageRelationships = "http://schemas.openxmlformats.org/package/2006/relationships";
+    private static readonly XNamespace ContentTypes = "http://schemas.openxmlformats.org/package/2006/content-types";
+
+    /// <summary>
+    /// The five value sheets all carry these, so that a reader learns one shape and a filter or a
+    /// formula written against one of them works against any of them.
+    /// </summary>
+    private static readonly string[] StandardHeader =
+        ["Keys", "Input file value", "Output file value", "Difference", "Other column values"];
+
+    #endregion
+
+    #region Public methods
 
     public static void Write(string path, ComparisonResult result, ComparisonOptions options)
     {
@@ -63,6 +86,10 @@ public static class XlsxReport
     }
 
     // ---------------------------------------------------------------- the sheets
+
+    #endregion
+
+    #region Private methods
 
     private static Sheet Overview(ComparisonResult result, ComparisonOptions options, List<Sheet> values)
     {
@@ -117,13 +144,6 @@ public static class XlsxReport
 
         return sheet;
     }
-
-    /// <summary>
-    /// The five value sheets all carry these, so that a reader learns one shape and a filter or a
-    /// formula written against one of them works against any of them.
-    /// </summary>
-    private static readonly string[] StandardHeader =
-        ["Keys", "Input file value", "Output file value", "Difference", "Other column values"];
 
     /// <summary>Row 1 of a value sheet: highlighted, and carrying the filter arrows.</summary>
     private static Sheet ValueSheet(string name)
@@ -322,12 +342,6 @@ public static class XlsxReport
     private static string Describe(decimal value) => value.ToString("0.############", CultureInfo.InvariantCulture);
 
     // ---------------------------------------------------------------- the package
-
-    /// <summary>
-    /// The one format the report defines, and the index it therefore has in cellXfs below. Everything
-    /// else is left at the workbook's default.
-    /// </summary>
-    private const int HeaderStyle = 1;
 
     /// <summary>
     /// Excel reserves the first two fills - none, then gray125 - and renumbers or repairs a workbook
@@ -537,6 +551,10 @@ public static class XlsxReport
 
     // ---------------------------------------------------------------- rows being built
 
+    #endregion
+
+    #region Nested types
+
     private sealed class Sheet
     {
         public Sheet(string name) => Name = SafeName(name);
@@ -598,4 +616,6 @@ public static class XlsxReport
 
         public bool IsEmpty => Amount is null && string.IsNullOrEmpty(Value);
     }
+
+    #endregion
 }

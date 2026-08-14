@@ -6,7 +6,13 @@ namespace FileComparerWindows.Infrastructure;
 /// <summary>Minimal change notification, so the window can bind to plain properties.</summary>
 public abstract class ObservableObject : INotifyPropertyChanged
 {
+    #region Events
+
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    #endregion
+
+    #region Protected methods
 
     protected void RaisePropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -20,4 +26,6 @@ public abstract class ObservableObject : INotifyPropertyChanged
         RaisePropertyChanged(propertyName);
         return true;
     }
+
+    #endregion
 }

@@ -19,7 +19,13 @@ public sealed record SingleSideRow(string Key, int LineNumber, string RowText);
 /// <summary>A column offered by the column picker, and whether the user has ticked it.</summary>
 public sealed class ColumnChoice : ObservableObject
 {
+    #region Fields
+
     private bool _isSelected;
+
+    #endregion
+
+    #region Properties
 
     public required string Name { get; init; }
 
@@ -31,6 +37,8 @@ public sealed class ColumnChoice : ObservableObject
         get => _isSelected;
         set => SetProperty(ref _isSelected, value);
     }
+
+    #endregion
 }
 
 /// <summary>How the last run ended, so the banner can colour itself.</summary>

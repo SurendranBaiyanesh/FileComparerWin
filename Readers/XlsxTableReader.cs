@@ -9,12 +9,22 @@ namespace FileComparerWindows.Readers;
 /// so no spreadsheet library is needed.</summary>
 public sealed class XlsxTableReader : ITableReader
 {
+    #region Fields
+
     private static readonly XNamespace Main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
     private static readonly XNamespace Relationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     private static readonly XNamespace PackageRelationships = "http://schemas.openxmlformats.org/package/2006/relationships";
     private static readonly string[] Extensions = [".xlsx", ".xlsm"];
 
+    #endregion
+
+    #region Properties
+
     public string FormatName => "Excel workbook";
+
+    #endregion
+
+    #region Public methods
 
     public bool CanRead(string path) => IsWorkbook(path);
 
@@ -56,6 +66,10 @@ public sealed class XlsxTableReader : ITableReader
             .Where(n => n.Length > 0)
             .ToList() ?? [];
     }
+
+    #endregion
+
+    #region Private methods
 
     private static List<string> ReadRow(XElement row, IReadOnlyList<string> sharedStrings)
     {
@@ -165,4 +179,6 @@ public sealed class XlsxTableReader : ITableReader
         using Stream stream = entry.Open();
         return XDocument.Load(stream);
     }
+
+    #endregion
 }

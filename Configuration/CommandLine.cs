@@ -9,6 +9,8 @@ namespace FileComparerWindows.Configuration;
 /// </summary>
 public static class CommandLine
 {
+    #region Public methods
+
     public static string GetConfigPath(string[] args, string defaultPath)
     {
         for (int i = 0; i < args.Length - 1; i++)
@@ -45,6 +47,10 @@ public static class CommandLine
         }
     }
 
+    #endregion
+
+    #region Private methods
+
     private static bool Matches(string arg, params string[] names) =>
         names.Any(n => string.Equals(arg, n, StringComparison.OrdinalIgnoreCase));
 
@@ -63,6 +69,10 @@ public static class CommandLine
     /// <summary>Invariant culture, so that --similar-range 0.5 means a half wherever the machine is set up.</summary>
     private static decimal ParseDecimal(string? value, decimal fallback) =>
         decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal parsed) ? parsed : fallback;
+
+    #endregion
+
+    #region Properties
 
     public static string HelpText =>
         """
@@ -103,4 +113,6 @@ public static class CommandLine
 
         Exit code, once the window is closed: 0 = files match, 1 = differences found, 2 = error.
         """;
+
+    #endregion
 }

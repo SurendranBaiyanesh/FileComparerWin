@@ -11,6 +11,8 @@ namespace FileComparerWindows.Reporting;
 /// </summary>
 public static class TextReport
 {
+    #region Public methods
+
     public static string Build(ComparisonResult result, ComparisonOptions options)
     {
         StringBuilder text = new StringBuilder();
@@ -24,6 +26,25 @@ public static class TextReport
 
         return text.ToString();
     }
+
+    /// <summary>
+    /// The warnings in report order, shared with the window's Warnings tab. Columns present in only one
+    /// of the files are not among them: a comparison that got this far was run on two files carrying the
+    /// same columns, since anything else stops as an error before a row is read.
+    /// </summary>
+    public static List<string> CollectWarnings(ComparisonResult result)
+    {
+        List<string> warnings = new List<string>();
+
+        warnings.AddRange(result.OptionWarnings);
+        warnings.AddRange(result.DuplicateKeyWarnings);
+
+        return warnings;
+    }
+
+    #endregion
+
+    #region Private methods
 
     private static void WriteHeader(StringBuilder text, ComparisonResult result, ComparisonOptions options)
     {
@@ -83,21 +104,6 @@ public static class TextReport
         text.AppendLine();
     }
 
-    /// <summary>
-    /// The warnings in report order, shared with the window's Warnings tab. Columns present in only one
-    /// of the files are not among them: a comparison that got this far was run on two files carrying the
-    /// same columns, since anything else stops as an error before a row is read.
-    /// </summary>
-    public static List<string> CollectWarnings(ComparisonResult result)
-    {
-        List<string> warnings = new List<string>();
-
-        warnings.AddRange(result.OptionWarnings);
-        warnings.AddRange(result.DuplicateKeyWarnings);
-
-        return warnings;
-    }
-
     private static string FormatRange(decimal range) =>
         range.ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture);
 
@@ -153,4 +159,6 @@ public static class TextReport
 
     private static void WriteRule(StringBuilder text) =>
         text.AppendLine(new string('=', 78));
+
+    #endregion
 }

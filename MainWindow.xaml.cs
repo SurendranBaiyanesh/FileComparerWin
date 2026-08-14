@@ -11,8 +11,23 @@ namespace FileComparerWindows;
 
 public partial class MainWindow : Window, IUserInteraction
 {
+    #region Constants
+
+    private const uint WmCopyGlobalData = 0x0049;
+    private const uint WmCopyData = 0x004A;
+    private const uint WmDropFiles = 0x0233;
+    private const uint MsgfltAllow = 1;
+
+    #endregion
+
+    #region Fields
+
     private readonly MainViewModel _viewModel;
     private readonly string[] _args;
+
+    #endregion
+
+    #region Constructor
 
     public MainWindow(string[] args)
     {
@@ -25,6 +40,69 @@ public partial class MainWindow : Window, IUserInteraction
         _viewModel.Initialise(args);
         Loaded += OnLoaded;
     }
+
+    #endregion
+
+    #region Public methods
+
+    // ---------------------------------------------------------------- IUserInteraction
+
+    public string? BrowseForOpen(string title, string filter, string? currentPath)
+    {
+        OpenFileDialog dialog = new OpenFileDialog
+        {
+            Title = title,
+            Filter = filter,
+            CheckFileExists = true,
+            InitialDirectory = DirectoryOf(currentPath)
+        };
+
+        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+    }
+
+    public string? BrowseForSave(string title, string filter, string suggestedFileName, string? currentPath)
+    {
+        SaveFileDialog dialog = new SaveFileDialog
+        {
+            Title = title,
+            Filter = filter,
+            FileName = suggestedFileName,
+            AddExtension = true,
+            OverwritePrompt = true,
+            InitialDirectory = DirectoryOf(currentPath)
+        };
+
+        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+    }
+
+    public IReadOnlyList<string>? PickColumns(string title, string prompt, IReadOnlyList<ColumnChoice> choices)
+    {
+        ColumnPickerWindow picker = new ColumnPickerWindow(title, prompt, choices) { Owner = this };
+        return picker.ShowDialog() == true ? picker.SelectedColumns : null;
+    }
+
+    public void ShowMessage(string title, string message) =>
+        MessageBox.Show(this, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+
+    public void ShowText(string title, string text) =>
+        new TextWindow(title, text) { Owner = this }.ShowDialog();
+
+    public void CopyToClipboard(string text)
+    {
+        try
+        {
+            Clipboard.SetText(text);
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            // Another application had the clipboard open; nothing here is worth an error dialog.
+            MessageBox.Show(this, "The clipboard was busy. Try again.", "Copy", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    #endregion
+
+    #region Private methods
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -54,11 +132,6 @@ public partial class MainWindow : Window, IUserInteraction
         foreach (uint message in (uint[])[WmDropFiles, WmCopyData, WmCopyGlobalData])
             ChangeWindowMessageFilterEx(handle, message, MsgfltAllow, IntPtr.Zero);
     }
-
-    private const uint WmCopyGlobalData = 0x0049;
-    private const uint WmCopyData = 0x004A;
-    private const uint WmDropFiles = 0x0233;
-    private const uint MsgfltAllow = 1;
 
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
@@ -195,36 +268,6 @@ public partial class MainWindow : Window, IUserInteraction
         }
     }
 
-    // ---------------------------------------------------------------- IUserInteraction
-
-    public string? BrowseForOpen(string title, string filter, string? currentPath)
-    {
-        OpenFileDialog dialog = new OpenFileDialog
-        {
-            Title = title,
-            Filter = filter,
-            CheckFileExists = true,
-            InitialDirectory = DirectoryOf(currentPath)
-        };
-
-        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
-    }
-
-    public string? BrowseForSave(string title, string filter, string suggestedFileName, string? currentPath)
-    {
-        SaveFileDialog dialog = new SaveFileDialog
-        {
-            Title = title,
-            Filter = filter,
-            FileName = suggestedFileName,
-            AddExtension = true,
-            OverwritePrompt = true,
-            InitialDirectory = DirectoryOf(currentPath)
-        };
-
-        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
-    }
-
     private static string DirectoryOf(string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
@@ -242,28 +285,5 @@ public partial class MainWindow : Window, IUserInteraction
         }
     }
 
-    public IReadOnlyList<string>? PickColumns(string title, string prompt, IReadOnlyList<ColumnChoice> choices)
-    {
-        ColumnPickerWindow picker = new ColumnPickerWindow(title, prompt, choices) { Owner = this };
-        return picker.ShowDialog() == true ? picker.SelectedColumns : null;
-    }
-
-    public void ShowMessage(string title, string message) =>
-        MessageBox.Show(this, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
-
-    public void ShowText(string title, string text) =>
-        new TextWindow(title, text) { Owner = this }.ShowDialog();
-
-    public void CopyToClipboard(string text)
-    {
-        try
-        {
-            Clipboard.SetText(text);
-        }
-        catch (System.Runtime.InteropServices.COMException)
-        {
-            // Another application had the clipboard open; nothing here is worth an error dialog.
-            MessageBox.Show(this, "The clipboard was busy. Try again.", "Copy", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-    }
+    #endregion
 }

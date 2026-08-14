@@ -4,6 +4,8 @@ namespace FileComparerWindows.Comparison;
 
 public sealed class ComparisonResult
 {
+    #region Properties
+
     public required DataTable Input { get; init; }
     public required DataTable Output { get; init; }
 
@@ -34,6 +36,8 @@ public sealed class ComparisonResult
     public int OutputRowCount => Output.Rows.Count;
     public int NonMatchingRowCount => ValueMismatches.Count + MissingInOutput.Count + ExtraInOutput.Count;
     public bool IsMatch => NonMatchingRowCount == 0;
+
+    #endregion
 }
 
 /// <summary>A row together with the key built from its key-column values.</summary>

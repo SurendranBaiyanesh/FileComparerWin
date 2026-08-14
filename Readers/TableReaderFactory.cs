@@ -6,13 +6,7 @@ namespace FileComparerWindows.Readers;
 /// <summary>Picks the reader for a file from its extension. Add a reader here to support another format.</summary>
 public sealed class TableReaderFactory
 {
-    private readonly List<ITableReader> _readers =
-    [
-        new DelimitedTableReader(),
-        new XmlTableReader(),
-        new JsonTableReader(),
-        new XlsxTableReader()
-    ];
+    #region Constants
 
     /// <summary>Every extension a reader claims, as an Open dialog filter.</summary>
     public const string FileDialogFilter =
@@ -22,6 +16,22 @@ public sealed class TableReaderFactory
         "JSON (*.json)|*.json|" +
         "Excel workbook (*.xlsx;*.xlsm)|*.xlsx;*.xlsm|" +
         "All files (*.*)|*.*";
+
+    #endregion
+
+    #region Fields
+
+    private readonly List<ITableReader> _readers =
+    [
+        new DelimitedTableReader(),
+        new XmlTableReader(),
+        new JsonTableReader(),
+        new XlsxTableReader()
+    ];
+
+    #endregion
+
+    #region Public methods
 
     public DataTable Load(string path, ComparisonOptions options)
     {
@@ -34,4 +44,6 @@ public sealed class TableReaderFactory
 
         return reader.Read(path, options);
     }
+
+    #endregion
 }

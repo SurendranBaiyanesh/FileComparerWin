@@ -18,12 +18,10 @@ public sealed record TextContent(string Text, string EncodingName)
 /// </summary>
 public static class TextFile
 {
+    #region Fields
+
     private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
     private static readonly Encoding BigEndianUtf32 = new UTF32Encoding(bigEndian: true, byteOrderMark: true);
-
-    /// <summary>The encodings <see cref="Read"/> accepts, in the order the user interface offers them.</summary>
-    public static IReadOnlyList<string> SupportedEncodings { get; } =
-        ["utf-8", "utf-16", "utf-16be", "utf-32", "ascii", "latin1", "windows-1252"];
 
     /// <summary>
     /// Windows-1252 is Latin-1 except across 0x80-0x9F, which hold the euro sign and the typographic
@@ -38,6 +36,18 @@ public static class TextFile
         (char)0x0090, (char)0x2018, (char)0x2019, (char)0x201C, (char)0x201D, (char)0x2022, (char)0x2013, (char)0x2014,
         (char)0x02DC, (char)0x2122, (char)0x0161, (char)0x203A, (char)0x0153, (char)0x009D, (char)0x017E, (char)0x0178
     ];
+
+    #endregion
+
+    #region Properties
+
+    /// <summary>The encodings <see cref="Read"/> accepts, in the order the user interface offers them.</summary>
+    public static IReadOnlyList<string> SupportedEncodings { get; } =
+        ["utf-8", "utf-16", "utf-16be", "utf-32", "ascii", "latin1", "windows-1252"];
+
+    #endregion
+
+    #region Public methods
 
     /// <param name="requestedEncoding">Forces an encoding; empty detects one.</param>
     public static TextContent Read(string path, string requestedEncoding = "")
@@ -67,6 +77,10 @@ public static class TextFile
             return new TextContent(DecodeWindows1252(bytes), "Windows-1252");
         }
     }
+
+    #endregion
+
+    #region Private methods
 
     private static Encoding? DetectByteOrderMark(byte[] bytes) => bytes switch
     {
@@ -111,4 +125,6 @@ public static class TextFile
     };
 
     private static string Describe(Encoding encoding) => encoding.WebName.ToUpperInvariant();
+
+    #endregion
 }

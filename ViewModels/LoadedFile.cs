@@ -13,6 +13,8 @@ namespace FileComparerWindows.ViewModels;
 /// </summary>
 public sealed class LoadedFile(string label) : ObservableObject
 {
+    #region Fields
+
     private static readonly TableReaderFactory Factory = new TableReaderFactory();
 
     private string _path = string.Empty;
@@ -21,6 +23,10 @@ public sealed class LoadedFile(string label) : ObservableObject
     private DataTable? _table;
     private string _signature = string.Empty;
     private CancellationTokenSource? _pendingRefresh;
+
+    #endregion
+
+    #region Properties
 
     public string Label { get; } = label;
 
@@ -60,13 +66,9 @@ public sealed class LoadedFile(string label) : ObservableObject
 
     public IReadOnlyList<string> Columns => Table?.Columns ?? [];
 
-    private void Clear()
-    {
-        Table = null;
-        _signature = string.Empty;
-        HasError = false;
-        Description = _path.Length == 0 ? "No file chosen." : "Reading…";
-    }
+    #endregion
+
+    #region Public methods
 
     /// <summary>
     /// Reads the file a moment from now, and drops the attempt if another one is asked for first. A path
@@ -129,6 +131,18 @@ public sealed class LoadedFile(string label) : ObservableObject
         }
     }
 
+    #endregion
+
+    #region Private methods
+
+    private void Clear()
+    {
+        Table = null;
+        _signature = string.Empty;
+        HasError = false;
+        Description = _path.Length == 0 ? "No file chosen." : "Reading…";
+    }
+
     private string BuildSignature(ComparisonOptions options)
     {
         // Only the settings that change how the file is read belong here.
@@ -138,4 +152,6 @@ public sealed class LoadedFile(string label) : ObservableObject
 
         return string.Join('|', _path, stamp, options.Encoding, options.Delimiter);
     }
+
+    #endregion
 }

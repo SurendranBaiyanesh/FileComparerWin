@@ -13,9 +13,21 @@ namespace FileComparerWindows.ViewModels;
 
 public sealed class MainViewModel : ObservableObject
 {
+    #region Constants
+
     private const int ExitMatch = 0;
     private const int ExitDifferences = 1;
     private const int ExitError = 2;
+
+    /// <summary>
+    /// Stands in for the empty string in the encoding and delimiter lists. An empty entry at the top of
+    /// a list reads as a fault rather than as a choice, so the default is spelt out and mapped back.
+    /// </summary>
+    private const string DetectLabel = "detect";
+
+    #endregion
+
+    #region Fields
 
     private readonly IUserInteraction _interaction;
     private readonly RelayCommand _compareCommand;
@@ -68,6 +80,10 @@ public sealed class MainViewModel : ObservableObject
     private string _missingRowsFilterSummary = string.Empty;
     private string _extraRowsFilterSummary = string.Empty;
 
+    #endregion
+
+    #region Constructor
+
     public MainViewModel(IUserInteraction interaction)
     {
         _interaction = interaction;
@@ -108,6 +124,10 @@ public sealed class MainViewModel : ObservableObject
         ShowCommandLineHelpCommand = new RelayCommand(() => _interaction.ShowText("Command line", CommandLine.HelpText));
         ShowAboutCommand = new RelayCommand(ShowAbout);
     }
+
+    #endregion
+
+    #region Properties
 
     public LoadedFile Input { get; }
     public LoadedFile Output { get; }
@@ -150,8 +170,6 @@ public sealed class MainViewModel : ObservableObject
     /// </summary>
     public IReadOnlyList<string> DelimiterChoices { get; } = [DetectLabel, ";", ",", "\\t", "|", "|\""];
 
-    private const string DetectLabel = "detect";
-
     public string SelectedEncoding
     {
         get => _encoding.Length == 0 ? DetectLabel : _encoding;
@@ -163,9 +181,6 @@ public sealed class MainViewModel : ObservableObject
         get => _delimiter.Length == 0 ? DetectLabel : _delimiter;
         set => Delimiter = IsDetect(value) ? string.Empty : value;
     }
-
-    private static bool IsDetect(string? value) =>
-        string.IsNullOrWhiteSpace(value) || string.Equals(value.Trim(), DetectLabel, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The exit code the process reports when the window closes, mirroring the console tool.</summary>
     public int ExitCode { get; private set; } = ExitMatch;
@@ -431,40 +446,9 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>The same thing with both headers spelt out, as the tooltip and as the error Compare stops with.</summary>
     public string ColumnMismatchDetail => _columnMismatch?.Detail ?? string.Empty;
 
-    // ---------------------------------------------------------------- reading the files
+    #endregion
 
-    private void OnFilePropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(LoadedFile.Path) && sender is LoadedFile file)
-            _ = file.RefreshLaterAsync(BuildOptions());
-
-        if (e.PropertyName == nameof(LoadedFile.Table))
-            RefreshColumnMismatch();
-    }
-
-    /// <summary>Compares the two headers, once there are two of them to compare.</summary>
-    private void RefreshColumnMismatch()
-    {
-        _columnMismatch = Input.Table is { } input && Output.Table is { } output
-            ? FileComparisonEngine.FindColumnMismatch(input, output)
-            : null;
-
-        RaisePropertyChanged(nameof(HasColumnMismatch));
-        RaisePropertyChanged(nameof(ColumnMismatchHeadline));
-        RaisePropertyChanged(nameof(ColumnMismatchDetail));
-    }
-
-    private void OnReaderSettingChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is not (nameof(Encoding) or nameof(Delimiter)))
-            return;
-
-        ComparisonOptions options = BuildOptions();
-        _ = Input.RefreshLaterAsync(options, delayMilliseconds: 50);
-        _ = Output.RefreshLaterAsync(options, delayMilliseconds: 50);
-    }
-
-    // ---------------------------------------------------------------- start-up
+    #region Public methods
 
     /// <summary>Fills the window from the settings file and whatever the command line added on top.</summary>
     public void Initialise(string[] args)
@@ -499,6 +483,61 @@ public sealed class MainViewModel : ObservableObject
     {
         if (Input.Path.Length > 0 && Output.Path.Length > 0 && KeyColumns.Trim().Length > 0)
             await CompareAsync();
+    }
+
+    /// <summary>The window's settings as the readers and the engine expect them.</summary>
+    public ComparisonOptions BuildOptions() => new ComparisonOptions
+    {
+        InputFilePath = Input.Path,
+        OutputFilePath = Output.Path,
+        KeyColumns = SplitList(KeyColumns),
+        CompareColumns = SplitList(CompareColumns),
+        IgnoreCase = IgnoreCase,
+        TrimValues = TrimValues,
+        SimilarMatch = SimilarMatch,
+        SimilarMatchRange = ParseRange(SimilarMatchRangeText),
+        Delimiter = Delimiter,
+        Encoding = Encoding
+    };
+
+    #endregion
+
+    #region Private methods
+
+    private static bool IsDetect(string? value) =>
+        string.IsNullOrWhiteSpace(value) || string.Equals(value.Trim(), DetectLabel, StringComparison.OrdinalIgnoreCase);
+
+    // ---------------------------------------------------------------- reading the files
+
+    private void OnFilePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(LoadedFile.Path) && sender is LoadedFile file)
+            _ = file.RefreshLaterAsync(BuildOptions());
+
+        if (e.PropertyName == nameof(LoadedFile.Table))
+            RefreshColumnMismatch();
+    }
+
+    /// <summary>Compares the two headers, once there are two of them to compare.</summary>
+    private void RefreshColumnMismatch()
+    {
+        _columnMismatch = Input.Table is { } input && Output.Table is { } output
+            ? FileComparisonEngine.FindColumnMismatch(input, output)
+            : null;
+
+        RaisePropertyChanged(nameof(HasColumnMismatch));
+        RaisePropertyChanged(nameof(ColumnMismatchHeadline));
+        RaisePropertyChanged(nameof(ColumnMismatchDetail));
+    }
+
+    private void OnReaderSettingChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is not (nameof(Encoding) or nameof(Delimiter)))
+            return;
+
+        ComparisonOptions options = BuildOptions();
+        _ = Input.RefreshLaterAsync(options, delayMilliseconds: 50);
+        _ = Output.RefreshLaterAsync(options, delayMilliseconds: 50);
     }
 
     // ---------------------------------------------------------------- comparing
@@ -694,20 +733,6 @@ public sealed class MainViewModel : ObservableObject
     }
 
     // ---------------------------------------------------------------- options
-
-    public ComparisonOptions BuildOptions() => new ComparisonOptions
-    {
-        InputFilePath = Input.Path,
-        OutputFilePath = Output.Path,
-        KeyColumns = SplitList(KeyColumns),
-        CompareColumns = SplitList(CompareColumns),
-        IgnoreCase = IgnoreCase,
-        TrimValues = TrimValues,
-        SimilarMatch = SimilarMatch,
-        SimilarMatchRange = ParseRange(SimilarMatchRangeText),
-        Delimiter = Delimiter,
-        Encoding = Encoding
-    };
 
     private void ApplyOptions(ComparisonOptions options)
     {
@@ -972,4 +997,6 @@ public sealed class MainViewModel : ObservableObject
         not interpreted. Two spreadsheets still compare correctly against each other; a spreadsheet
         compared against a text file needs the dates written as text.
         """);
+
+    #endregion
 }

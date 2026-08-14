@@ -13,7 +13,13 @@ namespace FileComparerWindows.ViewModels;
 /// </remarks>
 public sealed class ColumnFilter(Action changed) : ObservableObject
 {
+    #region Fields
+
     private string _text = string.Empty;
+
+    #endregion
+
+    #region Properties
 
     public string Text
     {
@@ -30,6 +36,10 @@ public sealed class ColumnFilter(Action changed) : ObservableObject
 
     public bool IsActive => _text.Length > 0;
 
+    #endregion
+
+    #region Public methods
+
     public bool Matches(string value) =>
         _text.Length == 0 || value.Contains(_text, StringComparison.CurrentCultureIgnoreCase);
 
@@ -38,11 +48,15 @@ public sealed class ColumnFilter(Action changed) : ObservableObject
         _text.Length == 0 || value.ToString(CultureInfo.InvariantCulture).Contains(_text, StringComparison.Ordinal);
 
     public void Clear() => Text = string.Empty;
+
+    #endregion
 }
 
 /// <summary>The filter boxes over the value-differences grid.</summary>
 public sealed class DifferenceFilters : ObservableObject
 {
+    #region Constructor
+
     public DifferenceFilters(Action changed)
     {
         void OnChanged()
@@ -59,6 +73,10 @@ public sealed class DifferenceFilters : ObservableObject
         OutputLine = new ColumnFilter(OnChanged);
     }
 
+    #endregion
+
+    #region Properties
+
     public ColumnFilter Key { get; }
     public ColumnFilter Column { get; }
     public ColumnFilter InputValue { get; }
@@ -69,6 +87,10 @@ public sealed class DifferenceFilters : ObservableObject
     public bool IsActive => All.Any(filter => filter.IsActive);
 
     /// <summary>Filters narrow one another, so naming a column and a value shows the rows that are both.</summary>
+    #endregion
+
+    #region Public methods
+
     public bool Matches(DifferenceRow row) =>
         Key.Matches(row.Key)
         && Column.Matches(row.Column)
@@ -83,12 +105,20 @@ public sealed class DifferenceFilters : ObservableObject
             filter.Clear();
     }
 
+    #endregion
+
+    #region Private properties
+
     private IEnumerable<ColumnFilter> All => [Key, Column, InputValue, OutputValue, InputLine, OutputLine];
+
+    #endregion
 }
 
 /// <summary>The filter boxes over the missing and extra grids, which list the same three columns.</summary>
 public sealed class SingleSideFilters : ObservableObject
 {
+    #region Constructor
+
     public SingleSideFilters(Action changed)
     {
         void OnChanged()
@@ -102,11 +132,19 @@ public sealed class SingleSideFilters : ObservableObject
         Row = new ColumnFilter(OnChanged);
     }
 
+    #endregion
+
+    #region Properties
+
     public ColumnFilter Key { get; }
     public ColumnFilter Line { get; }
     public ColumnFilter Row { get; }
 
     public bool IsActive => All.Any(filter => filter.IsActive);
+
+    #endregion
+
+    #region Public methods
 
     public bool Matches(SingleSideRow row) =>
         Key.Matches(row.Key) && Line.Matches(row.LineNumber) && Row.Matches(row.RowText);
@@ -117,5 +155,11 @@ public sealed class SingleSideFilters : ObservableObject
             filter.Clear();
     }
 
+    #endregion
+
+    #region Private properties
+
     private IEnumerable<ColumnFilter> All => [Key, Line, Row];
+
+    #endregion
 }

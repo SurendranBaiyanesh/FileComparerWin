@@ -6,6 +6,8 @@ namespace FileComparerWindows.ViewModels;
 /// </summary>
 public interface IUserInteraction
 {
+    #region Public methods
+
     string? BrowseForOpen(string title, string filter, string? currentPath);
 
     string? BrowseForSave(string title, string filter, string suggestedFileName, string? currentPath);
@@ -18,4 +20,6 @@ public interface IUserInteraction
     void ShowText(string title, string text);
 
     void CopyToClipboard(string text);
+
+    #endregion
 }
