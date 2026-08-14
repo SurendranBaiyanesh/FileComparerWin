@@ -103,8 +103,6 @@ public static class XlsxReport
         sheet.Add("  Similar range", Describe(options.SimilarMatchRange));
         sheet.Add("  Delimiter", options.Delimiter.Length == 0 ? "detect" : options.Delimiter);
         sheet.Add("  Encoding", options.Encoding.Length == 0 ? "detect" : options.Encoding);
-        sheet.Add("  Worksheet", options.SheetName.Length == 0 ? "first" : options.SheetName);
-        sheet.Add("  Rows listed", options.MaxNonMatchingRowsToShow == 0 ? "all" : options.MaxNonMatchingRowsToShow.ToString(CultureInfo.CurrentCulture));
         sheet.Blank();
 
         // The window trims its lists to the "Max rows" setting; a report that quietly left rows out

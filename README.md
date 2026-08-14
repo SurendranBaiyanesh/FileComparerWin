@@ -81,8 +81,7 @@ wrong is a difference, whatever else it also has. Values written differently but
 number — `123.00` and `123` — are equal outright and belong to sheet 2, not sheet 5; only values that
 needed the range appear there.
 
-Every row is written, whatever **Max rows** is set to — that setting trims what the window lists, and a
-report that quietly left rows out would be worth less than a long one.
+Every row is written.
 
 Values are written as text, so `007` stays `007` and `1-2` does not become a date. Only the counts on
 the overview are numbers. The workbook is built straight into the Open XML package, the same way the
@@ -94,7 +93,7 @@ the overview are numbers. The workbook is built straight into the Open XML packa
 | --- | --- |
 | **Files** | Input and output paths, with what was read from each, and a line in red when the two files do not carry the same columns. |
 | **Columns** | Key and Compare. **Pick…** ticks names off the headers the files actually have, so a column called `Name des Versicherten/Begünstigten` need not be typed. |
-| **Options** | Ignore case, trim values, similar match, list non-matching rows, max rows, delimiter, encoding, worksheet. |
+| **Options** | Ignore case, trim values, similar match, ± range, delimiter, encoding. |
 | **Verdict** | SUCCESS or FAILED, the columns the run used, and the six counts. |
 | **Value differences** | One row per differing column, with the key, both values and both line numbers. Select a row to see the two source rows in full. |
 | **Missing / Extra** | Rows present on one side only. |
@@ -122,15 +121,12 @@ Every option the console tool has, under the name the settings file uses.
 | Input / Output | `InputFilePath` / `OutputFilePath` | The two files. |
 | Key | `KeyColumns` | Key column(s), e.g. `PersonNumber` or `Name,PersonNumber`. |
 | Compare | `CompareColumns` | Columns compared once rows are paired. Default: every column the two files share. |
-| List non-matching rows | `ShowNonMatchingRows` | List the non-matching rows. |
-| Max rows | `MaxNonMatchingRowsToShow` | Cap on rows listed per category. `0` = all. |
 | Ignore case | `IgnoreCase` | Compare values case-insensitively. |
 | Trim values | `TrimValues` | Trim values before comparing. Default `true`. |
 | Similar match | `SimilarMatch` | Compare numbers by value: `123.00` equals `123`. |
 | ± range | `SimilarMatchRange` | How far apart two numbers may be and still count as equal. `0` = exactly equal. |
 | Delimiter | `Delimiter` | Delimiter for text files. `detect` reads it from the header. |
 | Encoding | `Encoding` | Encoding of the text files. `detect` by default. |
-| Sheet | `SheetName` | Worksheet for `.xlsx` files. Default: the first sheet. |
 
 **File > Save settings** writes them back under the same `FileComparer` section the console tool
 reads, so one settings file serves both.
@@ -144,9 +140,9 @@ point the application straight at a pair of files. `--run` compares immediately.
 FileComparerWindows -i input.csv -o output.csv -c PersonNumber --run
 ```
 
-The switches are the console tool's: `-i`, `-o`, `-c`, `--compare-columns`, `-x`, `-s`, `--max-rows`,
-`--ignore-case`, `--trim`, `--similar-match`, `--similar-range`, `-d`, `-e`, `--sheet`, `--config`.
-**Help > Command line** lists them.
+The switches: `-i`, `-o`, `-c`, `--compare-columns`, `--ignore-case`, `--trim`, `--similar-match`,
+`--similar-range`, `-d`, `-e`, `--config`, `--run`. **Help > Command line** lists them. The console
+tool still has `-x`, `-s`, `--max-rows` and `--sheet`; this window no longer does.
 
 Exit codes, once the window is closed: `0` files match, `1` differences found, `2` error. A script can
 therefore launch the window and still learn the outcome.

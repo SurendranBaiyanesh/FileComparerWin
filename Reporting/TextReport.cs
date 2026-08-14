@@ -19,11 +19,7 @@ public static class TextReport
         WriteCounts(text, result);
         WriteWarnings(text, result);
 
-        if (options.ShowNonMatchingRows)
-            WriteNonMatchingRows(text, result, options.MaxNonMatchingRowsToShow);
-        else if (!result.IsMatch)
-            text.AppendLine("Turn 'Show non-matching rows' on to list the differing rows.").AppendLine();
-
+        WriteNonMatchingRows(text, result);
         WriteVerdict(text, result);
 
         return text.ToString();
@@ -105,7 +101,7 @@ public static class TextReport
     private static string FormatRange(decimal range) =>
         range.ToString("0.############################", System.Globalization.CultureInfo.InvariantCulture);
 
-    private static void WriteNonMatchingRows(StringBuilder text, ComparisonResult result, int maxRows)
+    private static void WriteNonMatchingRows(StringBuilder text, ComparisonResult result)
     {
         if (result.IsMatch)
             return;
@@ -115,7 +111,7 @@ public static class TextReport
         if (result.ValueMismatches.Count > 0)
         {
             text.AppendLine($"    Value differences ({result.ValueMismatches.Count}):");
-            foreach (RowMismatch mismatch in Limit(result.ValueMismatches, maxRows))
+            foreach (RowMismatch mismatch in result.ValueMismatches)
             {
                 text.AppendLine($"      [{mismatch.DisplayKey}]");
                 foreach (ValueDifference difference in mismatch.Differences)
@@ -125,24 +121,21 @@ public static class TextReport
                 text.AppendLine($"        output (line {mismatch.OutputRow.LineNumber}): {mismatch.OutputRow.ToDisplayString()}");
             }
 
-            WriteTruncationNote(text, result.ValueMismatches.Count, maxRows);
         }
 
-        WriteRowList(text, "Present in input but missing from output", result.MissingInOutput, maxRows);
-        WriteRowList(text, "Present in output but missing from input", result.ExtraInOutput, maxRows);
+        WriteRowList(text, "Present in input but missing from output", result.MissingInOutput);
+        WriteRowList(text, "Present in output but missing from input", result.ExtraInOutput);
         text.AppendLine();
     }
 
-    private static void WriteRowList(StringBuilder text, string title, IReadOnlyList<KeyedRow> rows, int maxRows)
+    private static void WriteRowList(StringBuilder text, string title, IReadOnlyList<KeyedRow> rows)
     {
         if (rows.Count == 0)
             return;
 
         text.AppendLine($"    {title} ({rows.Count}):");
-        foreach (KeyedRow row in Limit(rows, maxRows))
+        foreach (KeyedRow row in rows)
             text.AppendLine($"      [{row.DisplayKey}] line {row.Row.LineNumber}: {row.Row.ToDisplayString()}");
-
-        WriteTruncationNote(text, rows.Count, maxRows);
     }
 
     private static void WriteVerdict(StringBuilder text, ComparisonResult result)
@@ -153,15 +146,6 @@ public static class TextReport
             : $"  RESULT: FAILED - {result.NonMatchingRowCount} non-matching row(s).");
 
         WriteRule(text);
-    }
-
-    private static IEnumerable<T> Limit<T>(IReadOnlyList<T> items, int maxRows) =>
-        maxRows > 0 ? items.Take(maxRows) : items;
-
-    private static void WriteTruncationNote(StringBuilder text, int total, int maxRows)
-    {
-        if (maxRows > 0 && total > maxRows)
-            text.AppendLine($"      ... {total - maxRows} more (raise 'Max rows' to see them all)");
     }
 
     private static void WriteCount(StringBuilder text, string label, int value) =>

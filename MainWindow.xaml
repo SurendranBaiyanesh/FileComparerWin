@@ -143,7 +143,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <CheckBox Grid.Row="0" Grid.Column="0" Content="Ignore case" IsChecked="{Binding IgnoreCase}"
@@ -163,30 +162,19 @@
                 <TextBlock Text="range" Style="{StaticResource Hint}" Margin="8,0,0,0" VerticalAlignment="Center" />
               </StackPanel>
 
-              <CheckBox Grid.Row="4" Grid.Column="0" Content="List non-matching rows" IsChecked="{Binding ShowNonMatchingRows}" />
-
-              <TextBlock Grid.Row="0" Grid.Column="1" Text="Max rows" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
-              <TextBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,6"
-                       Text="{Binding MaxRowsText, UpdateSourceTrigger=PropertyChanged}"
-                       ToolTip="Cap on rows listed per category. 0 lists them all." />
-
-              <TextBlock Grid.Row="1" Grid.Column="1" Text="Delimiter" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
-              <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,6" IsEditable="True"
+              <!-- Delimiter and Encoding start at the top of their column now that Max rows and Sheet
+                   are gone, so the right-hand pair lines up with the checkboxes beside them. -->
+              <TextBlock Grid.Row="0" Grid.Column="1" Text="Delimiter" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
+              <ComboBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,6" IsEditable="True"
                         ItemsSource="{Binding DelimiterChoices}"
                         Text="{Binding SelectedDelimiter, UpdateSourceTrigger=PropertyChanged}"
                         ToolTip="Delimiter for text files. 'detect' reads it from the header line, trying ; , tab and |. Longer delimiters are allowed; |&quot; has to be chosen, since detection cannot tell it from a plain pipe." />
 
-              <TextBlock Grid.Row="2" Grid.Column="1" Text="Encoding" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
-              <ComboBox Grid.Row="2" Grid.Column="2" Margin="0,0,0,6" IsEditable="True" IsReadOnly="True"
+              <TextBlock Grid.Row="1" Grid.Column="1" Text="Encoding" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
+              <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,6" IsEditable="True" IsReadOnly="True"
                         ItemsSource="{Binding EncodingChoices}"
                         Text="{Binding SelectedEncoding, UpdateSourceTrigger=PropertyChanged}"
                         ToolTip="'detect' means: byte order mark, else UTF-8, else Windows-1252." />
-
-              <TextBlock Grid.Row="3" Grid.Column="1" Text="Sheet" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
-              <ComboBox Grid.Row="3" Grid.Column="2" IsEditable="True"
-                        ItemsSource="{Binding SheetChoices}"
-                        Text="{Binding SheetName, UpdateSourceTrigger=LostFocus}"
-                        ToolTip="Worksheet for .xlsx files. Empty uses the first sheet." />
             </Grid>
           </StackPanel>
         </Border>

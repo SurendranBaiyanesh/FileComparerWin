@@ -24,15 +24,12 @@ public sealed class MainViewModel : ObservableObject
 
     private string _keyColumns = string.Empty;
     private string _compareColumns = string.Empty;
-    private bool _showNonMatchingRows = true;
-    private string _maxRowsText = "0";
     private bool _ignoreCase;
     private bool _trimValues = true;
     private bool _similarMatch;
     private string _similarMatchRangeText = "0";
     private string _delimiter = string.Empty;
     private string _encoding = string.Empty;
-    private string _sheetName = string.Empty;
 
     private bool _isBusy;
     private string _statusText = "Ready.";
@@ -170,10 +167,6 @@ public sealed class MainViewModel : ObservableObject
     private static bool IsDetect(string? value) =>
         string.IsNullOrWhiteSpace(value) || string.Equals(value.Trim(), DetectLabel, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>The worksheets of whichever of the two files are workbooks.</summary>
-    public IReadOnlyList<string> SheetChoices =>
-        [.. Input.SheetNames.Concat(Output.SheetNames).Distinct(StringComparer.OrdinalIgnoreCase)];
-
     /// <summary>The exit code the process reports when the window closes, mirroring the console tool.</summary>
     public int ExitCode { get; private set; } = ExitMatch;
 
@@ -187,19 +180,6 @@ public sealed class MainViewModel : ObservableObject
     {
         get => _compareColumns;
         set => SetProperty(ref _compareColumns, value);
-    }
-
-    public bool ShowNonMatchingRows
-    {
-        get => _showNonMatchingRows;
-        set => SetProperty(ref _showNonMatchingRows, value);
-    }
-
-    /// <summary>Kept as text so a half-typed number does not turn into a binding error.</summary>
-    public string MaxRowsText
-    {
-        get => _maxRowsText;
-        set => SetProperty(ref _maxRowsText, value);
     }
 
     public bool IgnoreCase
@@ -248,12 +228,6 @@ public sealed class MainViewModel : ObservableObject
             if (SetProperty(ref _encoding, value))
                 RaisePropertyChanged(nameof(SelectedEncoding));
         }
-    }
-
-    public string SheetName
-    {
-        get => _sheetName;
-        set => SetProperty(ref _sheetName, value);
     }
 
     public bool IsBusy
@@ -466,9 +440,6 @@ public sealed class MainViewModel : ObservableObject
 
         if (e.PropertyName == nameof(LoadedFile.Table))
             RefreshColumnMismatch();
-
-        if (e.PropertyName == nameof(LoadedFile.SheetNames))
-            RaisePropertyChanged(nameof(SheetChoices));
     }
 
     /// <summary>Compares the two headers, once there are two of them to compare.</summary>
@@ -485,7 +456,7 @@ public sealed class MainViewModel : ObservableObject
 
     private void OnReaderSettingChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is not (nameof(Encoding) or nameof(Delimiter) or nameof(SheetName)))
+        if (e.PropertyName is not (nameof(Encoding) or nameof(Delimiter)))
             return;
 
         ComparisonOptions options = BuildOptions();
@@ -609,10 +580,8 @@ public sealed class MainViewModel : ObservableObject
     private static (IReadOnlyList<DifferenceRow>, IReadOnlyList<SingleSideRow>, IReadOnlyList<SingleSideRow>, string) Project(
         ComparisonResult result, ComparisonOptions options)
     {
-        int max = options.ShowNonMatchingRows ? options.MaxNonMatchingRowsToShow : 0;
-
         List<DifferenceRow> differences = [];
-        foreach (RowMismatch mismatch in Limit(result.ValueMismatches, max))
+        foreach (RowMismatch mismatch in result.ValueMismatches)
         {
             string inputRowText = mismatch.InputRow.ToDisplayString();
             string outputRowText = mismatch.OutputRow.ToDisplayString();
@@ -629,17 +598,14 @@ public sealed class MainViewModel : ObservableObject
                     outputRowText));
         }
 
-        List<SingleSideRow> missing = [.. Limit(result.MissingInOutput, max)
+        List<SingleSideRow> missing = [.. result.MissingInOutput
             .Select(r => new SingleSideRow(r.DisplayKey, r.Row.LineNumber, r.Row.ToDisplayString()))];
 
-        List<SingleSideRow> extra = [.. Limit(result.ExtraInOutput, max)
+        List<SingleSideRow> extra = [.. result.ExtraInOutput
             .Select(r => new SingleSideRow(r.DisplayKey, r.Row.LineNumber, r.Row.ToDisplayString()))];
 
         return (differences, missing, extra, TextReport.Build(result, options));
     }
-
-    private static IEnumerable<T> Limit<T>(IReadOnlyList<T> items, int maxRows) =>
-        maxRows > 0 ? items.Take(maxRows) : items;
 
     /// <summary>
     /// The columns the run used. The compared list runs to dozens of names on a real file and is trimmed
@@ -735,14 +701,11 @@ public sealed class MainViewModel : ObservableObject
         OutputFilePath = Output.Path,
         KeyColumns = SplitList(KeyColumns),
         CompareColumns = SplitList(CompareColumns),
-        ShowNonMatchingRows = ShowNonMatchingRows,
-        MaxNonMatchingRowsToShow = ParseMaxRows(MaxRowsText),
         IgnoreCase = IgnoreCase,
         TrimValues = TrimValues,
         SimilarMatch = SimilarMatch,
         SimilarMatchRange = ParseRange(SimilarMatchRangeText),
         Delimiter = Delimiter,
-        SheetName = SheetName,
         Encoding = Encoding
     };
 
@@ -752,14 +715,11 @@ public sealed class MainViewModel : ObservableObject
         Output.Path = options.OutputFilePath;
         KeyColumns = string.Join(", ", options.KeyColumns);
         CompareColumns = string.Join(", ", options.CompareColumns);
-        ShowNonMatchingRows = options.ShowNonMatchingRows;
-        MaxRowsText = options.MaxNonMatchingRowsToShow.ToString(CultureInfo.InvariantCulture);
         IgnoreCase = options.IgnoreCase;
         TrimValues = options.TrimValues;
         SimilarMatch = options.SimilarMatch;
         SimilarMatchRangeText = options.SimilarMatchRange.ToString(CultureInfo.InvariantCulture);
         Delimiter = options.Delimiter;
-        SheetName = options.SheetName;
         Encoding = options.Encoding;
     }
 
@@ -767,9 +727,6 @@ public sealed class MainViewModel : ObservableObject
         string.IsNullOrWhiteSpace(value)
             ? []
             : [.. value.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
-
-    private static int ParseMaxRows(string value) =>
-        int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed) && parsed > 0 ? parsed : 0;
 
     /// <summary>
     /// A negative range is passed through rather than clamped away, so that typing one produces the

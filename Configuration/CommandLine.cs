@@ -33,14 +33,11 @@ public static class CommandLine
             else if (Matches(arg, "--output", "-o")) options.OutputFilePath = Next() ?? options.OutputFilePath;
             else if (Matches(arg, "--columns", "-c")) options.KeyColumns = SplitList(Next());
             else if (Matches(arg, "--compare-columns")) options.CompareColumns = SplitList(Next());
-            else if (Matches(arg, "--show-non-matching", "-s")) options.ShowNonMatchingRows = ParseBool(Next());
-            else if (Matches(arg, "--max-rows")) options.MaxNonMatchingRowsToShow = ParseInt(Next(), options.MaxNonMatchingRowsToShow);
             else if (Matches(arg, "--ignore-case")) options.IgnoreCase = ParseBool(Next());
             else if (Matches(arg, "--trim")) options.TrimValues = ParseBool(Next());
             else if (Matches(arg, "--similar-match")) options.SimilarMatch = ParseBool(Next());
             else if (Matches(arg, "--similar-range", "--range")) options.SimilarMatchRange = ParseDecimal(Next(), options.SimilarMatchRange);
             else if (Matches(arg, "--delimiter", "-d")) options.Delimiter = Next() ?? options.Delimiter;
-            else if (Matches(arg, "--sheet")) options.SheetName = Next() ?? options.SheetName;
             else if (Matches(arg, "--encoding", "-e")) options.Encoding = Next() ?? options.Encoding;
             else if (Matches(arg, "--config")) Next();
             else if (Matches(arg, "--run", "--compare")) { }
@@ -84,8 +81,6 @@ public static class CommandLine
                                         or "Name,PersonNumber".
               --compare-columns <list>  Columns to compare once rows are paired.
                                         Default: every column the two files share.
-          -s, --show-non-matching <b>   Show the non-matching rows (true/false).
-              --max-rows <n>            Max rows listed per category. 0 = all.
               --ignore-case <bool>      Compare values case-insensitively.
               --trim <bool>             Trim values before comparing. Default true.
               --similar-match <bool>    Compare numbers by value, so 123.00 equals 123
@@ -101,7 +96,6 @@ public static class CommandLine
           -e, --encoding <name>         Encoding of the text files: utf-8, utf-16, utf-16be,
                                         utf-32, ascii, latin1 or windows-1252.
                                         Default: detect (BOM, else UTF-8, else Windows-1252).
-              --sheet <name>            Worksheet name for .xlsx files. Default: first sheet.
               --config <path>           Settings file. Default: appsettings.json.
               --run                     Compare as soon as the window opens.
 
