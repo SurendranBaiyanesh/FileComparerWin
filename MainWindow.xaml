@@ -27,6 +27,9 @@
         <MenuItem Header="_Copy report" Command="{Binding CopyReportCommand}" />
         <MenuItem Header="_Export report…" Command="{Binding ExportReportCommand}" />
         <MenuItem Header="Export _differences as CSV…" Command="{Binding ExportDifferencesCommand}" />
+        <Separator />
+        <MenuItem Header="Export as E_xcel workbook…" Command="{Binding ExportExcelReportCommand}"
+                  ToolTip="Six sheets: overview, matching values, additional in the output, missing from the output, similar matches, and the differing values." />
       </MenuItem>
       <MenuItem Header="_Help">
         <MenuItem Header="_Command line…" Command="{Binding ShowCommandLineHelpCommand}" />
@@ -171,7 +174,7 @@
               <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,6" IsEditable="True"
                         ItemsSource="{Binding DelimiterChoices}"
                         Text="{Binding SelectedDelimiter, UpdateSourceTrigger=PropertyChanged}"
-                        ToolTip="Delimiter for text files. 'detect' reads it from the header line." />
+                        ToolTip="Delimiter for text files. 'detect' reads it from the header line, trying ; , tab and |. Longer delimiters are allowed; |&quot; has to be chosen, since detection cannot tell it from a plain pipe." />
 
               <TextBlock Grid.Row="2" Grid.Column="1" Text="Encoding" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
               <ComboBox Grid.Row="2" Grid.Column="2" Margin="0,0,0,6" IsEditable="True" IsReadOnly="True"
