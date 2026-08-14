@@ -19,8 +19,7 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
         ValidateOptions();
         RequireMatchingColumns(input, output);
         List<string> keyColumns = ResolveKeyColumns(input, output);
-        ColumnPlan columns = PlanColumns(input, output, keyColumns);
-        List<string> comparedColumns = columns.Compared;
+        List<string> comparedColumns = SelectComparableColumns(input, output, keyColumns);
 
         Dictionary<string, List<DataRow>> inputGroups = GroupByKey(input, keyColumns);
         Dictionary<string, List<DataRow>> outputGroups = GroupByKey(output, keyColumns);
@@ -71,8 +70,6 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
             Output = output,
             KeyColumns = keyColumns,
             ComparedColumns = comparedColumns,
-            SkippedColumns = columns.Skipped,
-            SkipColumnWarnings = columns.Warnings,
             MatchedRows = matchedRows,
             SimilarMatches = similarMatches,
             ValueMismatches = mismatches,
@@ -172,28 +169,9 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
     }
 
     /// <summary>
-    /// Settles which columns are actually compared: the columns selected for comparison, less anything
-    /// named as skipped. Skipping is subtractive and has the last word, so naming a column in both
-    /// CompareColumns and SkipColumns leaves it out.
+    /// Settles which columns are compared: the ones named for comparison, or every column the two files
+    /// share when none are named. Naming them is how a column is left out.
     /// </summary>
-    private ColumnPlan PlanColumns(DataTable input, DataTable output, List<string> keyColumns)
-    {
-        List<string> selected = SelectComparableColumns(input, output, keyColumns);
-        if (options.SkipColumns.Count == 0)
-            return new ColumnPlan(selected, [], []);
-
-        HashSet<string> skipped = new HashSet<string>(options.SkipColumns.Select(TextKey.Canonical), StringComparer.OrdinalIgnoreCase);
-        List<string> compared = selected.Where(c => !skipped.Contains(TextKey.Canonical(c))).ToList();
-        List<string> removed = selected.Where(c => skipped.Contains(TextKey.Canonical(c))).ToList();
-
-        if (compared.Count == 0)
-            throw new InvalidOperationException(
-                $"Every comparable column was skipped ({string.Join(", ", selected)}), leaving nothing to compare.{Environment.NewLine}" +
-                "  Rows would pair on the key columns and then match by definition.");
-
-        return new ColumnPlan(compared, removed, [.. DescribeSkipsThatChangedNothing(input, keyColumns, removed)]);
-    }
-
     private List<string> SelectComparableColumns(DataTable input, DataTable output, List<string> keyColumns)
     {
         if (options.CompareColumns.Count > 0)
@@ -211,34 +189,6 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
         // With only key columns in common there is nothing left to compare, so the keys themselves are the comparison.
         return nonKey.Count > 0 ? nonKey : common;
     }
-
-    /// <summary>
-    /// A name that was skipped but was never going to be compared anyway. Saying nothing would read as
-    /// the column having been excluded, when the comparison is exactly what it would have been. Only the
-    /// input's header is consulted: by the time this runs, the two files are known to carry the same
-    /// columns, so a name the input does not have is a name neither file has.
-    /// </summary>
-    private IEnumerable<string> DescribeSkipsThatChangedNothing(DataTable input, List<string> keyColumns, List<string> removed)
-    {
-        foreach (string name in options.SkipColumns)
-        {
-            if (removed.Any(r => SameColumn(r, name)))
-                continue;
-
-            if (keyColumns.Any(k => SameColumn(k, name)))
-                yield return $"Skipped column '{name}' is a key column: it pairs the rows and is not compared in any case.";
-            else if (!input.HasColumn(name))
-                yield return $"Skipped column '{name}' is not a column in either file.";
-            else
-                yield return $"Skipped column '{name}' is not among the Compare columns, so it was not being compared in any case.";
-        }
-    }
-
-    private static bool SameColumn(string left, string right) =>
-        string.Equals(TextKey.Canonical(left), TextKey.Canonical(right), StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>The columns compared, those held back, and anything worth saying about the latter.</summary>
-    private sealed record ColumnPlan(List<string> Compared, List<string> Skipped, List<string> Warnings);
 
     /// <summary>
     /// Groups rows on their key values. Deliberately exact, even when SimilarMatchRange allows values to

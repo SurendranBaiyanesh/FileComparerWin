@@ -60,19 +60,9 @@ public sealed class LoadedFile(string label) : ObservableObject
 
     public IReadOnlyList<string> Columns => Table?.Columns ?? [];
 
-    /// <summary>The worksheets, when the file is a workbook, so the sheet can be chosen rather than typed.</summary>
-    public IReadOnlyList<string> SheetNames
-    {
-        get => _sheetNames;
-        private set => SetProperty(ref _sheetNames, value);
-    }
-
-    private IReadOnlyList<string> _sheetNames = [];
-
     private void Clear()
     {
         Table = null;
-        SheetNames = [];
         _signature = string.Empty;
         HasError = false;
         Description = _path.Length == 0 ? "No file chosen." : "Reading…";
@@ -127,14 +117,12 @@ public sealed class LoadedFile(string label) : ObservableObject
             DataTable table = await Task.Run(() => Factory.Load(path, options));
 
             Table = table;
-            SheetNames = XlsxTableReader.IsWorkbook(path) ? await Task.Run(() => XlsxTableReader.ListSheetNames(path)) : [];
             _signature = signature;
             Description = $"{table.FormatName} · {table.Rows.Count:N0} row(s) · {table.Columns.Count} column(s)";
         }
         catch (Exception exception)
         {
             Table = null;
-            SheetNames = [];
             _signature = string.Empty;
             HasError = true;
             Description = exception.Message;
@@ -148,6 +136,6 @@ public sealed class LoadedFile(string label) : ObservableObject
             ? File.GetLastWriteTimeUtc(_path).Ticks.ToString() + ":" + new FileInfo(_path).Length
             : "missing";
 
-        return string.Join('|', _path, stamp, options.Encoding, options.Delimiter, options.SheetName);
+        return string.Join('|', _path, stamp, options.Encoding, options.Delimiter);
     }
 }

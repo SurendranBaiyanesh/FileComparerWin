@@ -143,7 +143,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <CheckBox Grid.Row="0" Grid.Column="0" Content="Ignore case" IsChecked="{Binding IgnoreCase}"
@@ -163,30 +162,19 @@
                 <TextBlock Text="range" Style="{StaticResource Hint}" Margin="8,0,0,0" VerticalAlignment="Center" />
               </StackPanel>
 
-              <CheckBox Grid.Row="4" Grid.Column="0" Content="List non-matching rows" IsChecked="{Binding ShowNonMatchingRows}" />
-
-              <TextBlock Grid.Row="0" Grid.Column="1" Text="Max rows" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
-              <TextBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,6"
-                       Text="{Binding MaxRowsText, UpdateSourceTrigger=PropertyChanged}"
-                       ToolTip="Cap on rows listed per category. 0 lists them all." />
-
-              <TextBlock Grid.Row="1" Grid.Column="1" Text="Delimiter" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
-              <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,6" IsEditable="True"
+              <!-- Delimiter and Encoding start at the top of their column now that Max rows and Sheet
+                   are gone, so the right-hand pair lines up with the checkboxes beside them. -->
+              <TextBlock Grid.Row="0" Grid.Column="1" Text="Delimiter" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
+              <ComboBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,6" IsEditable="True"
                         ItemsSource="{Binding DelimiterChoices}"
                         Text="{Binding SelectedDelimiter, UpdateSourceTrigger=PropertyChanged}"
                         ToolTip="Delimiter for text files. 'detect' reads it from the header line, trying ; , tab and |. Longer delimiters are allowed; |&quot; has to be chosen, since detection cannot tell it from a plain pipe." />
 
-              <TextBlock Grid.Row="2" Grid.Column="1" Text="Encoding" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
-              <ComboBox Grid.Row="2" Grid.Column="2" Margin="0,0,0,6" IsEditable="True" IsReadOnly="True"
+              <TextBlock Grid.Row="1" Grid.Column="1" Text="Encoding" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
+              <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,6" IsEditable="True" IsReadOnly="True"
                         ItemsSource="{Binding EncodingChoices}"
                         Text="{Binding SelectedEncoding, UpdateSourceTrigger=PropertyChanged}"
                         ToolTip="'detect' means: byte order mark, else UTF-8, else Windows-1252." />
-
-              <TextBlock Grid.Row="3" Grid.Column="1" Text="Sheet" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
-              <ComboBox Grid.Row="3" Grid.Column="2" IsEditable="True"
-                        ItemsSource="{Binding SheetChoices}"
-                        Text="{Binding SheetName, UpdateSourceTrigger=LostFocus}"
-                        ToolTip="Worksheet for .xlsx files. Empty uses the first sheet." />
             </Grid>
           </StackPanel>
         </Border>
@@ -202,8 +190,6 @@
               <ColumnDefinition Width="Auto" />
               <ColumnDefinition Width="*" />
               <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto" />
@@ -213,7 +199,6 @@
 
             <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Text="Key" Style="{StaticResource Hint}" Margin="1,0,0,3" />
             <TextBlock Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Text="Compare" Style="{StaticResource Hint}" Margin="13,0,0,3" />
-            <TextBlock Grid.Row="0" Grid.Column="4" Grid.ColumnSpan="2" Text="Skip" Style="{StaticResource Hint}" Margin="13,0,0,3" />
 
             <TextBox Grid.Row="1" Grid.Column="0" Text="{Binding KeyColumns, UpdateSourceTrigger=PropertyChanged}"
                      ToolTip="Comma separated, e.g. Name,PersonNumber" />
@@ -221,17 +206,12 @@
                     Style="{StaticResource SecondaryButton}" Command="{Binding PickKeyColumnsCommand}" />
 
             <TextBox Grid.Row="1" Grid.Column="2" Margin="12,0,0,0" Text="{Binding CompareColumns, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Empty compares every column the two files share." />
+                     ToolTip="Empty compares every column the two files share. Name the columns here to leave the others out." />
             <Button Grid.Row="1" Grid.Column="3" Content="Pick…" Margin="6,0,0,0" MinWidth="62"
                     Style="{StaticResource SecondaryButton}" Command="{Binding PickCompareColumnsCommand}" />
 
-            <TextBox Grid.Row="1" Grid.Column="4" Margin="12,0,0,0" Text="{Binding SkipColumns, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Differences in these columns are ignored." />
-            <Button Grid.Row="1" Grid.Column="5" Content="Pick…" Margin="6,0,0,0" MinWidth="62"
-                    Style="{StaticResource SecondaryButton}" Command="{Binding PickSkipColumnsCommand}" />
-
-            <TextBlock Grid.Row="2" Grid.ColumnSpan="6" Style="{StaticResource Hint}" Margin="1,7,0,0" TextTrimming="None" TextWrapping="Wrap"
-                       Text="Rows are paired on the key columns, which must exist in both files; their order does not matter. Compare left empty means every column the two files share. Differences in skipped columns — an export timestamp, a running number — stop counting." />
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="4" Style="{StaticResource Hint}" Margin="1,7,0,0" TextTrimming="None" TextWrapping="Wrap"
+                       Text="Rows are paired on the key columns, which must exist in both files; their order does not matter. Compare left empty means every column the two files share; naming columns there is how the rest — an export timestamp, a running number — are left out." />
           </Grid>
         </StackPanel>
       </Border>
@@ -250,6 +230,11 @@
           <Button Content="Swap" Style="{StaticResource SecondaryButton}" Command="{Binding SwapFilesCommand}"
                   ToolTip="Exchange the input and output files." />
           <Button Content="Clear" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Command="{Binding ClearResultsCommand}" />
+          <!-- Left of Compare, so the primary action stays the last thing on the row. It disables
+               itself until there is a comparison to write, the same as the menu entry. -->
+          <Button Content="Export Excel…" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0"
+                  Command="{Binding ExportExcelReportCommand}"
+                  ToolTip="Write the run to a workbook: overview, matching values, additional in the output, missing from the output, similar matches, and the differing values." />
           <Button Content="Compare" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" MinWidth="124"
                   Command="{Binding CompareCommand}" IsDefault="True" />
         </StackPanel>

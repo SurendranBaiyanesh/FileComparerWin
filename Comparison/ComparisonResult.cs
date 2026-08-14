@@ -10,12 +10,6 @@ public sealed class ComparisonResult
     public required IReadOnlyList<string> KeyColumns { get; init; }
     public required IReadOnlyList<string> ComparedColumns { get; init; }
 
-    /// <summary>Columns that would have been compared but were named as skipped.</summary>
-    public required IReadOnlyList<string> SkippedColumns { get; init; }
-
-    /// <summary>Skipped names that changed nothing: unknown columns, or key columns.</summary>
-    public required IReadOnlyList<string> SkipColumnWarnings { get; init; }
-
     /// <summary>Paired rows whose every compared value was equal outright.</summary>
     public required IReadOnlyList<MatchedRow> MatchedRows { get; init; }
 

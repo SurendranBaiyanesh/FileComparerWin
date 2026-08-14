@@ -26,7 +26,7 @@ public sealed class XlsxTableReader : ITableReader
         using ZipArchive archive = ZipFile.OpenRead(path);
 
         List<string> sharedStrings = ReadSharedStrings(archive);
-        (string sheetName, string sheetPath) = ResolveSheet(archive, options.SheetName, path);
+        (string sheetName, string sheetPath) = ResolveSheet(archive, string.Empty, path);
         XDocument sheet = LoadXml(archive, sheetPath)
                     ?? throw new InvalidDataException($"Worksheet '{sheetPath}' is missing from '{path}'.");
 

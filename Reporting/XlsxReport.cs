@@ -81,7 +81,6 @@ public static class XlsxReport
 
         sheet.Add("Key columns", string.Join(", ", result.KeyColumns));
         sheet.Add("Compared columns", string.Join(", ", result.ComparedColumns));
-        sheet.Add("Skipped columns", result.SkippedColumns.Count == 0 ? "none" : string.Join(", ", result.SkippedColumns));
         sheet.Blank();
 
         // Two counts, because they answer different questions and would otherwise look like a
@@ -104,15 +103,13 @@ public static class XlsxReport
         sheet.Add("  Similar range", Describe(options.SimilarMatchRange));
         sheet.Add("  Delimiter", options.Delimiter.Length == 0 ? "detect" : options.Delimiter);
         sheet.Add("  Encoding", options.Encoding.Length == 0 ? "detect" : options.Encoding);
-        sheet.Add("  Worksheet", options.SheetName.Length == 0 ? "first" : options.SheetName);
-        sheet.Add("  Rows listed", options.MaxNonMatchingRowsToShow == 0 ? "all" : options.MaxNonMatchingRowsToShow.ToString(CultureInfo.CurrentCulture));
         sheet.Blank();
 
         // The window trims its lists to the "Max rows" setting; a report that quietly left rows out
         // would be a worse thing than a long one, so every row is written here whatever that says.
         sheet.Add("Note", "Every row is written to the sheets, whatever Max rows is set to.");
 
-        List<string> warnings = [.. result.SkipColumnWarnings, .. result.DuplicateKeyWarnings, .. result.OptionWarnings];
+        List<string> warnings = [.. result.DuplicateKeyWarnings, .. result.OptionWarnings];
         sheet.Blank();
         sheet.Add("Warnings", warnings.Count == 0 ? "none" : $"{warnings.Count}");
         foreach (string warning in warnings)

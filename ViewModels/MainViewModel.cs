@@ -24,16 +24,12 @@ public sealed class MainViewModel : ObservableObject
 
     private string _keyColumns = string.Empty;
     private string _compareColumns = string.Empty;
-    private string _skipColumns = string.Empty;
-    private bool _showNonMatchingRows = true;
-    private string _maxRowsText = "0";
     private bool _ignoreCase;
     private bool _trimValues = true;
     private bool _similarMatch;
     private string _similarMatchRangeText = "0";
     private string _delimiter = string.Empty;
     private string _encoding = string.Empty;
-    private string _sheetName = string.Empty;
 
     private bool _isBusy;
     private string _statusText = "Ready.";
@@ -101,7 +97,6 @@ public sealed class MainViewModel : ObservableObject
         SwapFilesCommand = new RelayCommand(SwapFiles);
         PickKeyColumnsCommand = new RelayCommand(() => PickColumns("Key columns", "Rows are paired on these columns. They must exist in both files. Drag a column by its grip to reorder them - the one at the top is the first key.", KeyColumns, v => KeyColumns = v));
         PickCompareColumnsCommand = new RelayCommand(() => PickColumns("Compare columns", "Columns compared once rows are paired. Leave empty to compare every column the two files share.", CompareColumns, v => CompareColumns = v));
-        PickSkipColumnsCommand = new RelayCommand(() => PickColumns("Skip columns", "Differences in these columns are ignored.", SkipColumns, v => SkipColumns = v));
         ClearResultsCommand = new RelayCommand(ClearResults);
         LoadSettingsCommand = new RelayCommand(LoadSettings);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
@@ -122,7 +117,6 @@ public sealed class MainViewModel : ObservableObject
     public ICommand SwapFilesCommand { get; }
     public ICommand PickKeyColumnsCommand { get; }
     public ICommand PickCompareColumnsCommand { get; }
-    public ICommand PickSkipColumnsCommand { get; }
     public ICommand CompareCommand => _compareCommand;
     public ICommand ClearResultsCommand { get; }
     public ICommand LoadSettingsCommand { get; }
@@ -173,10 +167,6 @@ public sealed class MainViewModel : ObservableObject
     private static bool IsDetect(string? value) =>
         string.IsNullOrWhiteSpace(value) || string.Equals(value.Trim(), DetectLabel, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>The worksheets of whichever of the two files are workbooks.</summary>
-    public IReadOnlyList<string> SheetChoices =>
-        [.. Input.SheetNames.Concat(Output.SheetNames).Distinct(StringComparer.OrdinalIgnoreCase)];
-
     /// <summary>The exit code the process reports when the window closes, mirroring the console tool.</summary>
     public int ExitCode { get; private set; } = ExitMatch;
 
@@ -190,25 +180,6 @@ public sealed class MainViewModel : ObservableObject
     {
         get => _compareColumns;
         set => SetProperty(ref _compareColumns, value);
-    }
-
-    public string SkipColumns
-    {
-        get => _skipColumns;
-        set => SetProperty(ref _skipColumns, value);
-    }
-
-    public bool ShowNonMatchingRows
-    {
-        get => _showNonMatchingRows;
-        set => SetProperty(ref _showNonMatchingRows, value);
-    }
-
-    /// <summary>Kept as text so a half-typed number does not turn into a binding error.</summary>
-    public string MaxRowsText
-    {
-        get => _maxRowsText;
-        set => SetProperty(ref _maxRowsText, value);
     }
 
     public bool IgnoreCase
@@ -257,12 +228,6 @@ public sealed class MainViewModel : ObservableObject
             if (SetProperty(ref _encoding, value))
                 RaisePropertyChanged(nameof(SelectedEncoding));
         }
-    }
-
-    public string SheetName
-    {
-        get => _sheetName;
-        set => SetProperty(ref _sheetName, value);
     }
 
     public bool IsBusy
@@ -322,7 +287,7 @@ public sealed class MainViewModel : ObservableObject
         private set => SetProperty(ref _verdictDetail, value);
     }
 
-    /// <summary>The key, compared and skipped columns the run actually used.</summary>
+    /// <summary>The key and compared columns the run actually used.</summary>
     public string ComparisonSummary
     {
         get => _comparisonSummary;
@@ -475,9 +440,6 @@ public sealed class MainViewModel : ObservableObject
 
         if (e.PropertyName == nameof(LoadedFile.Table))
             RefreshColumnMismatch();
-
-        if (e.PropertyName == nameof(LoadedFile.SheetNames))
-            RaisePropertyChanged(nameof(SheetChoices));
     }
 
     /// <summary>Compares the two headers, once there are two of them to compare.</summary>
@@ -494,7 +456,7 @@ public sealed class MainViewModel : ObservableObject
 
     private void OnReaderSettingChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is not (nameof(Encoding) or nameof(Delimiter) or nameof(SheetName)))
+        if (e.PropertyName is not (nameof(Encoding) or nameof(Delimiter)))
             return;
 
         ComparisonOptions options = BuildOptions();
@@ -618,10 +580,8 @@ public sealed class MainViewModel : ObservableObject
     private static (IReadOnlyList<DifferenceRow>, IReadOnlyList<SingleSideRow>, IReadOnlyList<SingleSideRow>, string) Project(
         ComparisonResult result, ComparisonOptions options)
     {
-        int max = options.ShowNonMatchingRows ? options.MaxNonMatchingRowsToShow : 0;
-
         List<DifferenceRow> differences = [];
-        foreach (RowMismatch mismatch in Limit(result.ValueMismatches, max))
+        foreach (RowMismatch mismatch in result.ValueMismatches)
         {
             string inputRowText = mismatch.InputRow.ToDisplayString();
             string outputRowText = mismatch.OutputRow.ToDisplayString();
@@ -638,33 +598,23 @@ public sealed class MainViewModel : ObservableObject
                     outputRowText));
         }
 
-        List<SingleSideRow> missing = [.. Limit(result.MissingInOutput, max)
+        List<SingleSideRow> missing = [.. result.MissingInOutput
             .Select(r => new SingleSideRow(r.DisplayKey, r.Row.LineNumber, r.Row.ToDisplayString()))];
 
-        List<SingleSideRow> extra = [.. Limit(result.ExtraInOutput, max)
+        List<SingleSideRow> extra = [.. result.ExtraInOutput
             .Select(r => new SingleSideRow(r.DisplayKey, r.Row.LineNumber, r.Row.ToDisplayString()))];
 
         return (differences, missing, extra, TextReport.Build(result, options));
     }
-
-    private static IEnumerable<T> Limit<T>(IReadOnlyList<T> items, int maxRows) =>
-        maxRows > 0 ? items.Take(maxRows) : items;
 
     /// <summary>
     /// The columns the run used. The compared list runs to dozens of names on a real file and is trimmed
     /// to the width of the banner, so each list is counted as well as named: the count survives the
     /// trimming, and the names in full are on the tooltip.
     /// </summary>
-    private static string BuildComparisonSummary(ComparisonResult result)
-    {
-        string summary = $"Keys: {string.Join(", ", result.KeyColumns)}   ·   " +
-                         $"Compared ({result.ComparedColumns.Count}): {string.Join(", ", result.ComparedColumns)}";
-
-        if (result.SkippedColumns.Count > 0)
-            summary += $"   ·   Skipped ({result.SkippedColumns.Count}): {string.Join(", ", result.SkippedColumns)}";
-
-        return summary;
-    }
+    private static string BuildComparisonSummary(ComparisonResult result) =>
+        $"Keys: {string.Join(", ", result.KeyColumns)}   ·   " +
+        $"Compared ({result.ComparedColumns.Count}): {string.Join(", ", result.ComparedColumns)}";
 
     /// <summary>
     /// Puts the rows behind the grids and wraps each list in a view the column filters can narrow. The
@@ -751,15 +701,11 @@ public sealed class MainViewModel : ObservableObject
         OutputFilePath = Output.Path,
         KeyColumns = SplitList(KeyColumns),
         CompareColumns = SplitList(CompareColumns),
-        SkipColumns = SplitList(SkipColumns),
-        ShowNonMatchingRows = ShowNonMatchingRows,
-        MaxNonMatchingRowsToShow = ParseMaxRows(MaxRowsText),
         IgnoreCase = IgnoreCase,
         TrimValues = TrimValues,
         SimilarMatch = SimilarMatch,
         SimilarMatchRange = ParseRange(SimilarMatchRangeText),
         Delimiter = Delimiter,
-        SheetName = SheetName,
         Encoding = Encoding
     };
 
@@ -769,15 +715,11 @@ public sealed class MainViewModel : ObservableObject
         Output.Path = options.OutputFilePath;
         KeyColumns = string.Join(", ", options.KeyColumns);
         CompareColumns = string.Join(", ", options.CompareColumns);
-        SkipColumns = string.Join(", ", options.SkipColumns);
-        ShowNonMatchingRows = options.ShowNonMatchingRows;
-        MaxRowsText = options.MaxNonMatchingRowsToShow.ToString(CultureInfo.InvariantCulture);
         IgnoreCase = options.IgnoreCase;
         TrimValues = options.TrimValues;
         SimilarMatch = options.SimilarMatch;
         SimilarMatchRangeText = options.SimilarMatchRange.ToString(CultureInfo.InvariantCulture);
         Delimiter = options.Delimiter;
-        SheetName = options.SheetName;
         Encoding = options.Encoding;
     }
 
@@ -785,9 +727,6 @@ public sealed class MainViewModel : ObservableObject
         string.IsNullOrWhiteSpace(value)
             ? []
             : [.. value.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
-
-    private static int ParseMaxRows(string value) =>
-        int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed) && parsed > 0 ? parsed : 0;
 
     /// <summary>
     /// A negative range is passed through rather than clamped away, so that typing one produces the

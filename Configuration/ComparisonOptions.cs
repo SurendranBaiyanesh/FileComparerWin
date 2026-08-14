@@ -16,17 +16,6 @@ public sealed class ComparisonOptions
     /// <summary>Columns to compare once rows are paired. Empty means every column the two files share.</summary>
     public List<string> CompareColumns { get; set; } = [];
 
-    /// <summary>
-    /// Columns left out of the comparison, whatever else selected them. Differences in these columns
-    /// do not make a row non-matching.
-    /// </summary>
-    public List<string> SkipColumns { get; set; } = [];
-
-    public bool ShowNonMatchingRows { get; set; } = true;
-
-    /// <summary>Cap on rows listed per non-matching category; 0 lists them all.</summary>
-    public int MaxNonMatchingRowsToShow { get; set; }
-
     public bool IgnoreCase { get; set; }
     public bool TrimValues { get; set; } = true;
 
@@ -46,9 +35,6 @@ public sealed class ComparisonOptions
 
     /// <summary>Delimiter for text files. Empty means detect it from the header line.</summary>
     public string Delimiter { get; set; } = string.Empty;
-
-    /// <summary>Worksheet to read from spreadsheet files. Empty means the first sheet.</summary>
-    public string SheetName { get; set; } = string.Empty;
 
     /// <summary>
     /// Encoding of the text files, e.g. "windows-1252". Empty detects it, which is right unless a
