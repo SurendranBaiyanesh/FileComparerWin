@@ -150,7 +150,11 @@ public sealed class LoadedFile(string label) : ObservableObject
             ? File.GetLastWriteTimeUtc(_path).Ticks.ToString() + ":" + new FileInfo(_path).Length
             : "missing";
 
-        return string.Join('|', _path, stamp, options.Encoding, options.Delimiter);
+        // The split positions belong here as much as the delimiter does: without them a file already
+        // read would be handed back unchanged when the positions were altered, and Convert would look
+        // as though it had done nothing.
+        return string.Join('|', _path, stamp, options.Encoding, options.Delimiter,
+                           options.SplitIndexes, options.NoHeaderRow);
     }
 
     #endregion

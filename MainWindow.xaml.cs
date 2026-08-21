@@ -81,6 +81,12 @@ public partial class MainWindow : Window, IUserInteraction
         return picker.ShowDialog() == true ? picker.SelectedColumns : null;
     }
 
+    public string? PickSplitPositions(string title, string prompt, string firstRow, string currentPositions)
+    {
+        SplitIndexWindow picker = new SplitIndexWindow(title, prompt, firstRow, currentPositions) { Owner = this };
+        return picker.ShowDialog() == true ? picker.Positions : null;
+    }
+
     public void ShowMessage(string title, string message) =>
         MessageBox.Show(this, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
 

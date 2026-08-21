@@ -35,8 +35,41 @@ public sealed class ComparisonOptions
     /// </summary>
     public decimal SimilarMatchRange { get; set; }
 
+    /// <summary>
+    /// The delimiter that means "there is no delimiter - cut the line at <see cref="SplitIndexes"/>
+    /// instead". Spelt out in the settings file rather than inferred from the positions being filled
+    /// in, so that a file can keep its positions while being read by an ordinary separator again.
+    /// </summary>
+    public const string DynamicDelimiter = "Dynamic";
+
     /// <summary>Delimiter for text files. Empty means detect it from the header line.</summary>
     public string Delimiter { get; set; } = string.Empty;
+
+    /// <summary>True when the files are to be cut at fixed positions rather than on a separator.</summary>
+    public bool IsDynamic =>
+        string.Equals(Delimiter.Trim(), DynamicDelimiter, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Where to cut a fixed-width line that has no delimiter to cut on, as a list of positions:
+    /// "1;2;5;13". Each number is the position of the last character of its column, counting the first
+    /// character of the line as 0, so 1;2;5 takes two characters, then one, then three. One column is
+    /// produced per position, named column1, column2 and so on, every line of both files is cut the
+    /// same way, and the files are read without a header line - a record laid out by position carries
+    /// no names to read.
+    ///
+    /// Empty leaves the files to be read by their delimiter, which is what nearly every file wants.
+    /// </summary>
+    public string SplitIndexes { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Reads both files as though every line or row were a record, naming the columns column1, column2
+    /// and so on rather than taking the names from a first line that does not exist. Needed to compare
+    /// a file laid out by position against a spreadsheet that likewise begins at its first record: the
+    /// two sides have to arrive at the same column names or there is nothing to compare against.
+    ///
+    /// Implied for a file being cut by <see cref="SplitIndexes"/>, which has no header by definition.
+    /// </summary>
+    public bool NoHeaderRow { get; set; }
 
     /// <summary>
     /// Encoding of the text files, e.g. "windows-1252". Empty detects it, which is right unless a

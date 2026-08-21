@@ -41,6 +41,8 @@ public sealed class MainViewModel : ObservableObject
     private bool _similarMatch;
     private string _similarMatchRangeText = "0";
     private string _delimiter = string.Empty;
+    private string _splitIndexes = string.Empty;
+    private bool _noHeaderRow;
     private string _encoding = string.Empty;
 
     private bool _isBusy;
@@ -111,6 +113,9 @@ public sealed class MainViewModel : ObservableObject
         BrowseInputCommand = new RelayCommand(() => Browse(Input));
         BrowseOutputCommand = new RelayCommand(() => Browse(Output));
         SwapFilesCommand = new RelayCommand(SwapFiles);
+        ConvertCommand = new RelayCommand(async () => await ConvertAsync(),
+            () => IsDynamicDelimiter && SplitIndexes.Trim().Length > 0 && !IsBusy);
+        PickSplitIndexesCommand = new RelayCommand(PickSplitIndexes, () => IsDynamicDelimiter);
         PickKeyColumnsCommand = new RelayCommand(() => PickColumns("Key columns", "Rows are paired on these columns. They must exist in both files. Drag a column by its grip to reorder them - the one at the top is the first key.", KeyColumns, v => KeyColumns = v));
         PickCompareColumnsCommand = new RelayCommand(() => PickColumns("Compare columns", "Columns compared once rows are paired. Leave empty to compare every column the two files share.", CompareColumns, v => CompareColumns = v));
         ClearResultsCommand = new RelayCommand(ClearResults);
@@ -135,6 +140,8 @@ public sealed class MainViewModel : ObservableObject
     public ICommand BrowseInputCommand { get; }
     public ICommand BrowseOutputCommand { get; }
     public ICommand SwapFilesCommand { get; }
+    public RelayCommand ConvertCommand { get; }
+    public RelayCommand PickSplitIndexesCommand { get; }
     public ICommand PickKeyColumnsCommand { get; }
     public ICommand PickCompareColumnsCommand { get; }
     public ICommand CompareCommand => _compareCommand;
@@ -168,7 +175,8 @@ public sealed class MainViewModel : ObservableObject
     /// The box is editable, so any separator can be typed; these are the ones worth not typing. |" is
     /// offered but never detected - in a header line it cannot be told apart from a plain pipe.
     /// </summary>
-    public IReadOnlyList<string> DelimiterChoices { get; } = [DetectLabel, ";", ",", "\\t", "|", "|\""];
+    public IReadOnlyList<string> DelimiterChoices { get; } =
+        [DetectLabel, ";", ",", "\\t", "|", "|\"", ComparisonOptions.DynamicDelimiter];
 
     public string SelectedEncoding
     {
@@ -231,8 +239,46 @@ public sealed class MainViewModel : ObservableObject
         set
         {
             if (SetProperty(ref _delimiter, value))
+            {
                 RaisePropertyChanged(nameof(SelectedDelimiter));
+                RaisePropertyChanged(nameof(IsDynamicDelimiter));
+                ConvertCommand.RaiseCanExecuteChanged();
+                PickSplitIndexesCommand.RaiseCanExecuteChanged();
+            }
         }
+    }
+
+    /// <summary>
+    /// Positions to cut fixed-width lines at, e.g. "1;2;5;13". Filling this in takes both files away
+    /// from the delimiter altogether: the columns come from the positions and are named column1,
+    /// column2 and so on, and every line is a record rather than the first being a header.
+    /// </summary>
+    public string SplitIndexes
+    {
+        get => _splitIndexes;
+        set
+        {
+            if (SetProperty(ref _splitIndexes, value))
+                ConvertCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    /// <summary>
+    /// True while the delimiter is Dynamic, which is the one setting the split positions mean anything
+    /// under. The Split at box is disabled otherwise, so that positions cannot be filled in where they
+    /// would quietly do nothing.
+    /// </summary>
+    public bool IsDynamicDelimiter =>
+        string.Equals(_delimiter.Trim(), ComparisonOptions.DynamicDelimiter, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Treats the first line or row of both files as a record rather than as column names, naming the
+    /// columns column1, column2 and so on. A file cut by position is read this way whatever this says.
+    /// </summary>
+    public bool NoHeaderRow
+    {
+        get => _noHeaderRow;
+        set => SetProperty(ref _noHeaderRow, value);
     }
 
     public string Encoding
@@ -254,6 +300,7 @@ public sealed class MainViewModel : ObservableObject
             {
                 RaisePropertyChanged(nameof(IsIdle));
                 _compareCommand.RaiseCanExecuteChanged();
+                ConvertCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -485,6 +532,57 @@ public sealed class MainViewModel : ObservableObject
             await CompareAsync();
     }
 
+    /// <summary>
+    /// Cuts both files at the split positions there and then, rather than waiting for Compare, and
+    /// puts the columns that came out into the Compare box. Until a file has been read nobody - the
+    /// window included - knows what its columns are called, so this is what makes column1, column2 and
+    /// the rest available to the Key and Compare boxes and their pickers.
+    ///
+    /// The Key box is left alone: which column pairs the rows is a decision about the data that the
+    /// application is in no position to make, and filling it with every column would pair rows on the
+    /// whole record and report every difference as a row missing on one side.
+    /// </summary>
+    public async Task ConvertAsync()
+    {
+        if (IsBusy)
+            return;
+
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            StatusText = "Splitting…";
+            await RefreshFilesAsync();
+
+            if (Input.HasError || Output.HasError)
+            {
+                ErrorMessage = Input.HasError ? Input.Description : Output.Description;
+                StatusText = "Could not split the files.";
+                return;
+            }
+
+            IReadOnlyList<string> columns = Input.Columns.Count > 0 ? Input.Columns : Output.Columns;
+            if (columns.Count == 0)
+            {
+                StatusText = "Nothing to split - choose the files first.";
+                return;
+            }
+
+            CompareColumns = string.Join(", ", columns);
+            StatusText = $"Split into {columns.Count} column(s): {columns[0]} to {columns[^1]}. Name a key column, then Compare.";
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = exception.Message;
+            StatusText = "Could not split the files.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     /// <summary>The window's settings as the readers and the engine expect them.</summary>
     public ComparisonOptions BuildOptions() => new ComparisonOptions
     {
@@ -497,6 +595,8 @@ public sealed class MainViewModel : ObservableObject
         SimilarMatch = SimilarMatch,
         SimilarMatchRange = ParseRange(SimilarMatchRangeText),
         Delimiter = Delimiter,
+        SplitIndexes = SplitIndexes,
+        NoHeaderRow = NoHeaderRow,
         Encoding = Encoding
     };
 
@@ -532,7 +632,7 @@ public sealed class MainViewModel : ObservableObject
 
     private void OnReaderSettingChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is not (nameof(Encoding) or nameof(Delimiter)))
+        if (e.PropertyName is not (nameof(Encoding) or nameof(Delimiter) or nameof(SplitIndexes) or nameof(NoHeaderRow)))
             return;
 
         ComparisonOptions options = BuildOptions();
@@ -745,6 +845,8 @@ public sealed class MainViewModel : ObservableObject
         SimilarMatch = options.SimilarMatch;
         SimilarMatchRangeText = options.SimilarMatchRange.ToString(CultureInfo.InvariantCulture);
         Delimiter = options.Delimiter;
+        SplitIndexes = options.SplitIndexes;
+        NoHeaderRow = options.NoHeaderRow;
         Encoding = options.Encoding;
     }
 
@@ -779,6 +881,66 @@ public sealed class MainViewModel : ObservableObject
     /// Offers the columns of both files, ticked where they are already named. A column present in only
     /// one file is still offered but says so, because that is exactly the case a user needs to see.
     /// </summary>
+    /// <summary>
+    /// Hands the first row of the file to the picker to be marked up, and takes the positions back.
+    /// The row is read as the plain text it is rather than through the reader: the reader would want
+    /// the very positions this is here to work out.
+    /// </summary>
+    private void PickSplitIndexes()
+    {
+        string path = FirstReadablePath();
+        if (path.Length == 0)
+        {
+            ErrorMessage = "Choose an input or output file first - the picker marks up a row from it.";
+            return;
+        }
+
+        string firstRow;
+        try
+        {
+            firstRow = TextFile.Read(path, Encoding).Lines().FirstOrDefault(l => l.Length > 0) ?? string.Empty;
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage = $"Could not read '{path}': {exception.Message}";
+            return;
+        }
+
+        if (firstRow.Length == 0)
+        {
+            ErrorMessage = $"'{Path.GetFileName(path)}' has no rows to mark up.";
+            return;
+        }
+
+        string? positions = _interaction.PickSplitPositions(
+            "Pick split index",
+            $"The first row of {Path.GetFileName(path)}. Type the separator wherever a column should end - " +
+            "the separators are counted and thrown away, and what is left is the row cut at those positions.",
+            firstRow,
+            SplitIndexes);
+
+        if (positions is null)
+            return;
+
+        SplitIndexes = positions;
+        StatusText = positions.Length == 0
+            ? "No split positions chosen."
+            : $"Split positions: {positions}";
+    }
+
+    /// <summary>
+    /// The file to take a row from: the input, or the output when only that is set. A workbook has no
+    /// rows of text to mark up, so it is passed over.
+    /// </summary>
+    private string FirstReadablePath()
+    {
+        foreach (string path in (string[])[Input.Path, Output.Path])
+            if (path.Trim().Length > 0 && File.Exists(path) && !XlsxTableReader.IsWorkbook(path))
+                return path;
+
+        return string.Empty;
+    }
+
     private void PickColumns(string title, string prompt, string current, Action<string> assign)
     {
         List<ColumnChoice> choices = BuildColumnChoices(current);

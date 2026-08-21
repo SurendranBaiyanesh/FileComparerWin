@@ -49,6 +49,12 @@ public sealed class XlsxTableReader : ITableReader
         if (cellRows.Count == 0)
             throw new InvalidDataException($"Worksheet '{sheetName}' in '{path}' is empty.");
 
+        // Without a header row the first row is a record like any other, and the names are made up to
+        // match whatever the other file made up - a sheet that starts at its data has none to give.
+        if (options.NoHeaderRow)
+            return TableBuilder.Build(path, $"{FormatName} (sheet '{sheetName}', no header row)",
+                TableBuilder.GeneratedHeader(cellRows.Max(r => r.Values.Count)), cellRows);
+
         List<string> header = cellRows[0].Values;
         List<(int LineNumber, List<string> Values)> records = cellRows.Skip(1).Select(r => (r.LineNumber, r.Values)).ToList();
 

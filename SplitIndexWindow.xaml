@@ -1,0 +1,95 @@
+<Window x:Class="FileComparerWindows.SplitIndexWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Height="580" Width="900"
+        MinHeight="420" MinWidth="620"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="{StaticResource AppBackgroundBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="Segoe UI"
+        FontSize="13"
+        TextOptions.TextFormattingMode="Display">
+
+  <DockPanel Margin="16">
+
+    <TextBlock DockPanel.Dock="Top" x:Name="PromptText" Style="{StaticResource Hint}"
+               TextWrapping="Wrap" TextTrimming="None" Margin="0,0,0,12" />
+
+    <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+
+      <TextBlock Grid.Column="0" Text="Separator" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+      <TextBox Grid.Column="1" x:Name="MarkerBox" Width="46" MaxLength="1" TextAlignment="Center"
+               FontFamily="{StaticResource MonoFont}" TextChanged="OnMarkerChanged"
+               ToolTip="The character to mark the cuts with. Choose one the data itself does not contain." />
+
+      <TextBlock Grid.Column="2" x:Name="MarkerWarning" Style="{StaticResource Hint}" Margin="12,0,0,0"
+                 VerticalAlignment="Center" TextTrimming="None"
+                 Foreground="{StaticResource DangerBrush}" />
+
+      <Button Grid.Column="3" Content="Start again" Style="{StaticResource SecondaryButton}"
+              Click="OnReset" ToolTip="Put the row back as it was read, with no separators in it." />
+    </Grid>
+
+    <!-- ================================================================ actions -->
+    <Grid DockPanel.Dock="Bottom" Margin="0,12,0,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+
+      <TextBlock Grid.Column="0" x:Name="PositionCount" Style="{StaticResource Hint}"
+                 VerticalAlignment="Center" TextTrimming="None" />
+
+      <StackPanel Grid.Column="1" Orientation="Horizontal">
+        <Button Content="Cancel" Style="{StaticResource SecondaryButton}" IsCancel="True" />
+        <Button Content="OK" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" IsDefault="True" Click="OnAccept" />
+      </StackPanel>
+    </Grid>
+
+    <!-- ============================================================== the row -->
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+
+      <TextBlock Grid.Row="0" Text="THE FIRST ROW" Style="{StaticResource SectionHeader}" Margin="0,0,0,6" />
+
+      <!-- Monospaced and unwrapped, so a position counted on screen is the position in the file. -->
+      <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" CornerRadius="4">
+        <TextBox x:Name="RowBox" BorderThickness="0" Background="Transparent"
+                 FontFamily="{StaticResource MonoFont}" FontSize="13"
+                 AcceptsReturn="False" TextWrapping="NoWrap" Padding="8,7"
+                 HorizontalScrollBarVisibility="Auto"
+                 TextChanged="OnRowChanged"
+                 ToolTip="Type the separator wherever a column should end. Everything else is the row as it was read." />
+      </Border>
+
+      <TextBlock Grid.Row="2" x:Name="PositionsText" Style="{StaticResource Hint}" Margin="1,10,0,6"
+                 TextWrapping="Wrap" TextTrimming="None" FontFamily="{StaticResource MonoFont}" />
+
+      <Border Grid.Row="3" Background="White" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" CornerRadius="4">
+        <DataGrid x:Name="PreviewGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                  HeadersVisibility="Column" GridLinesVisibility="All" BorderThickness="0"
+                  CanUserAddRows="False" CanUserSortColumns="False"
+                  FontFamily="{StaticResource MonoFont}" FontSize="12">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Column" Binding="{Binding Name}" MinWidth="90" />
+            <DataGridTextColumn Header="Ends at" Binding="{Binding Position}" MinWidth="70" />
+            <DataGridTextColumn Header="Width" Binding="{Binding Width}" MinWidth="60" />
+            <DataGridTextColumn Header="Value" Binding="{Binding Value}" MinWidth="220" />
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+    </Grid>
+  </DockPanel>
+</Window>

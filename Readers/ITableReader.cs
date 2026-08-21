@@ -23,6 +23,14 @@ public static class TableBuilder
     /// </summary>
     #region Public methods
 
+    /// <summary>
+    /// Column names for a file that carries none: column1, column2 and so on. Shared by the readers so
+    /// that a file cut by position and a spreadsheet read without its first row agree on what to call
+    /// their columns, which is what lets one be compared against the other.
+    /// </summary>
+    public static List<string> GeneratedHeader(int count) =>
+        [.. Enumerable.Range(1, count).Select(n => $"column{n}")];
+
     public static DataTable Build(string path, string formatName, IReadOnlyList<string> header,
                                   List<(int LineNumber, List<string> Values)> records, string? delimiter = null)
     {
