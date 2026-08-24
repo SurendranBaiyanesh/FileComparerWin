@@ -40,6 +40,8 @@ public static class CommandLine
             else if (Matches(arg, "--similar-match")) options.SimilarMatch = ParseBool(Next());
             else if (Matches(arg, "--similar-range", "--range")) options.SimilarMatchRange = ParseDecimal(Next(), options.SimilarMatchRange);
             else if (Matches(arg, "--delimiter", "-d")) options.Delimiter = Next() ?? options.Delimiter;
+            else if (Matches(arg, "--split", "--split-index", "--split-indexes")) options.SplitIndexes = Next() ?? options.SplitIndexes;
+            else if (Matches(arg, "--no-header")) options.NoHeaderRow = ParseBool(Next());
             else if (Matches(arg, "--encoding", "-e")) options.Encoding = Next() ?? options.Encoding;
             else if (Matches(arg, "--config")) Next();
             else if (Matches(arg, "--run", "--compare")) { }
@@ -103,6 +105,17 @@ public static class CommandLine
                                         auto-detect, which tries ; , tab and |. A delimiter
                                         holding a quote, such as |", turns quoting off: the
                                         line is cut on the delimiter and read as written.
+              --split <list>            Cut fixed-width lines at these positions instead of
+                                        on a delimiter, e.g. "1;2;5;13". Each number is the
+                                        position of the last character of its column, the
+                                        first character of the line counting as 0. Both files
+                                        are cut the same way, columns are named column1,
+                                        column2 and so on, and no header line is read.
+              --no-header <bool>        Read the first line or row of both files as a record
+                                        rather than as column names, calling the columns
+                                        column1, column2 and so on. Needed to compare a file
+                                        split by position against a spreadsheet that also
+                                        starts at its data. Implied by --split.
           -e, --encoding <name>         Encoding of the text files: utf-8, utf-16, utf-16be,
                                         utf-32, ascii, latin1 or windows-1252.
                                         Default: detect (BOM, else UTF-8, else Windows-1252).

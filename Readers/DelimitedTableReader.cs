@@ -32,15 +32,35 @@ public sealed class DelimitedTableReader : ITableReader
     {
         TextContent content = TextFile.Read(path, options.Encoding);
         string[] lines = content.Lines();
+
+        // A line cut by position has no delimiter and no header: the names are made up from the
+        // positions, and the first line is a record like every other.
+        if (options.IsDynamic)
+        {
+            int[] positions = SplitPositions.Parse(options.SplitIndexes);
+            if (positions.Length == 0)
+                throw new InvalidDataException(
+                    $"The delimiter is '{ComparisonOptions.DynamicDelimiter}', which cuts the line at fixed positions, " +
+                    "but no positions were given." + Environment.NewLine +
+                    "  Fill in Split at, e.g. 1;2;5;13, or choose a delimiter to read the file by.");
+
+            return ReadByPosition(path, content, lines, positions);
+        }
+
         int headerIndex = Array.FindIndex(lines, l => !string.IsNullOrWhiteSpace(l));
         if (headerIndex < 0)
             throw new InvalidDataException($"'{path}' is empty.");
 
         string delimiter = ResolveDelimiter(options.Delimiter, lines[headerIndex]);
-        List<string> header = SplitLine(lines[headerIndex], delimiter);
+
+        // Without a header row the first line is a record too, and the names are made up to match
+        // whatever the other file made up.
+        List<string> header = options.NoHeaderRow
+            ? TableBuilder.GeneratedHeader(SplitLine(lines[headerIndex], delimiter).Count)
+            : SplitLine(lines[headerIndex], delimiter);
 
         List<(int, List<string>)> records = new List<(int, List<string>)>();
-        for (int i = headerIndex + 1; i < lines.Length; i++)
+        for (int i = options.NoHeaderRow ? headerIndex : headerIndex + 1; i < lines.Length; i++)
         {
             if (string.IsNullOrWhiteSpace(lines[i]))
                 continue;
@@ -49,12 +69,38 @@ public sealed class DelimitedTableReader : ITableReader
         }
 
         return TableBuilder.Build(path, $"{FormatName} ('{Describe(delimiter)}' separated, {content.EncodingName})",
-                                  header, records, delimiter);
+                                  header, records, delimiter, options.NoHeaderRow);
     }
 
     #endregion
 
     #region Private methods
+
+    /// <summary>
+    /// Reads a file whose columns are marked out by position. Every line is a record - there is no
+    /// header to read names from - so the columns are called column1, column2 and so on, one for each
+    /// position given.
+    /// </summary>
+    private DataTable ReadByPosition(string path, TextContent content, string[] lines, int[] positions)
+    {
+        List<string> header = TableBuilder.GeneratedHeader(positions.Length);
+
+        List<(int LineNumber, List<string> Values)> records = new List<(int, List<string>)>();
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (string.IsNullOrWhiteSpace(lines[i]))
+                continue;
+
+            records.Add((i + 1, SplitPositions.Split(lines[i], positions)));
+        }
+
+        if (records.Count == 0)
+            throw new InvalidDataException($"'{path}' is empty.");
+
+        return TableBuilder.Build(path,
+            $"{FormatName} (split at {positions.Length} position(s), {content.EncodingName})",
+            header, records, generatedColumnNames: true);
+    }
 
     private static string ResolveDelimiter(string configured, string headerLine)
     {

@@ -143,10 +143,14 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
               </Grid.RowDefinitions>
 
               <CheckBox Grid.Row="0" Grid.Column="0" Content="Ignore case" IsChecked="{Binding IgnoreCase}"
                         ToolTip="Compare values without regard to case." />
+              <CheckBox Grid.Row="4" Grid.Column="0" Content="No header row" IsChecked="{Binding NoHeaderRow}"
+                        ToolTip="Reads the first line or row of both files as a record rather than as column names, and calls the columns column1, column2 and so on. Needed to compare a file split by position against a spreadsheet that also starts at its data. A file split by position is read this way in any case." />
               <CheckBox Grid.Row="1" Grid.Column="0" Content="Trim values" IsChecked="{Binding TrimValues}"
                         ToolTip="Trim leading and trailing whitespace before comparing." />
               <CheckBox Grid.Row="2" Grid.Column="0" Content="Similar match (123.00 = 123)" IsChecked="{Binding SimilarMatch}"
@@ -168,13 +172,33 @@
               <ComboBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,6" IsEditable="True"
                         ItemsSource="{Binding DelimiterChoices}"
                         Text="{Binding SelectedDelimiter, UpdateSourceTrigger=PropertyChanged}"
-                        ToolTip="Delimiter for text files. 'detect' reads it from the header line, trying ; , tab and |. Longer delimiters are allowed; |&quot; has to be chosen, since detection cannot tell it from a plain pipe." />
+                        ToolTip="Delimiter for text files. 'detect' reads it from the header line, trying ; , tab and |. Longer delimiters are allowed; |&quot; has to be chosen, since detection cannot tell it from a plain pipe. 'Dynamic' means there is no delimiter at all - the line is cut at the positions in Split at." />
 
               <TextBlock Grid.Row="1" Grid.Column="1" Text="Encoding" Style="{StaticResource FieldLabel}" Margin="14,0,10,0" />
               <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,6" IsEditable="True" IsReadOnly="True"
                         ItemsSource="{Binding EncodingChoices}"
                         Text="{Binding SelectedEncoding, UpdateSourceTrigger=PropertyChanged}"
                         ToolTip="'detect' means: byte order mark, else UTF-8, else Windows-1252." />
+
+              <!-- A row of its own across the whole panel: a list of twenty positions and a button
+                   beside it will not fit the narrow column the other settings sit in. Only live under
+                   the Dynamic delimiter, since positions mean nothing to a file cut on a separator. -->
+              <Grid Grid.Row="5" Grid.ColumnSpan="3" Margin="0,8,0,0"
+                    IsEnabled="{Binding IsDynamicDelimiter}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Split at" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                <TextBox Grid.Column="1" Margin="10,0,0,0"
+                         Text="{Binding SplitIndexes, UpdateSourceTrigger=LostFocus}"
+                         ToolTip="Positions to cut fixed-width lines at, e.g. 1;2;5;13 - each number is the last character of its column, counting the first character of the line as 0. Both files are cut the same way, columns are named column1, column2 and so on, and no header line is read." />
+                <Button Grid.Column="2" Content="Pick Split Index…" Margin="8,0,0,0" MinWidth="126"
+                        Style="{StaticResource SecondaryButton}" Command="{Binding PickSplitIndexesCommand}"
+                        ToolTip="Shows the first row of the file so the cuts can be marked on it with a separator, rather than counting characters and writing the positions out by hand." />
+              </Grid>
             </Grid>
           </StackPanel>
         </Border>
@@ -227,7 +251,10 @@
                    Text="Delimited text · XML · JSON · Excel. The two files need not share a format or an encoding, but must carry the same columns." />
 
         <StackPanel Grid.Column="1" Orientation="Horizontal">
-          <Button Content="Swap" Style="{StaticResource SecondaryButton}" Command="{Binding SwapFilesCommand}"
+          <!-- Before Compare, because it is what makes the column names exist to be named. -->
+          <Button Content="Convert" Style="{StaticResource SecondaryButton}" Command="{Binding ConvertCommand}"
+                  ToolTip="Cut both files at the positions in Split at now, and put the columns that come out into Compare. Needs the delimiter set to Dynamic and the positions filled in." />
+          <Button Content="Swap" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Command="{Binding SwapFilesCommand}"
                   ToolTip="Exchange the input and output files." />
           <Button Content="Clear" Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Command="{Binding ClearResultsCommand}" />
           <!-- Left of Compare, so the primary action stays the last thing on the row. It disables

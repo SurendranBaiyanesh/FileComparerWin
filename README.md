@@ -76,6 +76,11 @@ Turning `EnableCompressionInSingleFile` off in
 | 5 | Similar matches (±n) | Rows that agreed *only* because the range allowed it — one line per value, with how far apart the two were. |
 | 6 | Difference values | One line per differing column, so sorting on Column shows whether one field is behind every failure. |
 
+**Other column values** shows the rest of the record. Where the file named its columns, each value is
+written against its name — `Age=31; Salary=3000` — and where it did not, because the columns were cut
+by position and numbered `column1`, `column2`, …, the names are left out and only the values are
+written: `EI;0;VPA`. A name the file never had is not worth the room.
+
 Sheets 2, 5 and 6 divide the paired rows between them and never overlap: a row with anything genuinely
 wrong is a difference, whatever else it also has. Values written differently but meaning the same
 number — `123.00` and `123` — are equal outright and belong to sheet 2, not sheet 5; only values that
@@ -126,6 +131,8 @@ Every option the console tool has, under the name the settings file uses.
 | Similar match | `SimilarMatch` | Compare numbers by value: `123.00` equals `123`. |
 | ± range | `SimilarMatchRange` | How far apart two numbers may be and still count as equal. `0` = exactly equal. |
 | Delimiter | `Delimiter` | Delimiter for text files. `detect` reads it from the header. |
+| Split at | `SplitIndexes` | Positions to cut fixed-width lines at, e.g. `1;2;5;13`. Empty reads by delimiter. |
+| No header row | `NoHeaderRow` | Read the first line or row of both files as a record; name columns `column1`, `column2`, … |
 | Encoding | `Encoding` | Encoding of the text files. `detect` by default. |
 
 **File > Save settings** writes them back under the same `FileComparer` section the console tool
@@ -233,6 +240,85 @@ pressed.
 The commonest reason for a column to be on one side only is the encoding: a Windows-1252 header read
 as UTF-8 turns `Begünstigten` into `Beg�nstigten`, which is a different name. The error says so when
 it finds a replacement character in a header, and [Encoding](#encoding) is the setting that fixes it.
+
+## Splitting lines that have no delimiter
+
+Some exports have no separator at all — every field sits at a fixed position:
+
+```
+Row 1: EI0VPA20260131000102991000000000050  004260212049166977000000000000081285Aeschbacher…
+Row 2: …
+```
+
+Set **Delimiter** to `Dynamic` — the entry that means *there is no delimiter, cut at fixed positions*.
+That is what makes **Split at** live; it stays greyed out under any other delimiter, since positions
+mean nothing to a file being cut on a separator. Then fill in the positions, semicolon or comma
+separated:
+
+```
+1;2;5;13;22;34;36;39;43;51;55;73;103;114;116;119;122;131;132;140
+```
+
+**Each number is the position of the last character of its column, counting the first character of the
+line as 0.** So `1;2;5` takes two characters, then one, then three: `EI`, `0`, `VPA`. One column comes
+out per position given, and **both files are cut the same way** — every line of each, not just the first.
+
+Two things follow from a file laid out this way. There is no header line to read names from, so the
+columns are named `column1`, `column2` and so on, and every line — including the first — is a record.
+And the delimiter has nothing to cut on, so that box greys out while positions are filled in.
+
+### Marking the cuts up instead of counting them
+
+Counting characters to write `1;2;5;13;22;34…` by hand is miserable and easy to get wrong by one.
+**Pick Split Index…** beside the box does it the other way round: it shows the first row of the file
+and lets the cuts be typed onto it.
+
+```
+EI|0|VPA|20260131|000102991|
+```
+
+Every separator ends the column to its left. The separators are counted, turned into positions and
+thrown away — they never reach the data. Underneath, a grid shows the row cut at exactly those
+positions, by the same code the reader will use, so the preview cannot disagree with the result.
+
+Choose a separator the data does not contain — the dialog says so if it does, since a `0` used as a
+separator in a row full of zeros would cut it to pieces. **Start again** puts the row back as read, and
+opening the dialog on positions already in the box shows them marked, so a list can be adjusted rather
+than restarted.
+
+A position past the end of the row is marked at the end of it, which is the same cut: a row of 140
+characters cut at 140 and at 139 gives the same last column.
+
+Press **Convert** to cut both files there and then. Until a file has been read nobody — the window
+included — knows what its columns are called, so Convert is what brings `column1`, `column2` and the
+rest into existence: it fills the **Compare** box with them and offers them to both **Pick…** dialogs.
+
+**Key** is left empty on purpose. Which column pairs the rows is a decision about the data, and filling
+it with every column would pair on the whole record and report every difference as a row missing from
+one side. Name one — `column5`, say — and press **Compare**.
+
+Values keep their padding, so leave **Trim values** on unless the spaces are meant to count. A line
+shorter than the positions expect is not an error — the columns it does not reach come back empty.
+`Dynamic` with no positions filled in is refused with a message rather than read as a separator.
+
+### When neither file has a header
+
+A `.xlsx` normally gives its column names away in row 1, and a delimited file its first line. A file
+that begins at its first record has none to give, and read the usual way it loses that record and names
+the columns after its contents — so the two sides never agree on what to call anything and the run
+stops on mismatched columns.
+
+Tick **No header row** and both files are read as records throughout, both naming their columns
+`column1`, `column2` and so on. That is what lets a fixed-width text file be compared against a
+headerless spreadsheet:
+
+| | Read normally | With **No header row** |
+| --- | --- | --- |
+| Columns | `EI`, `0`, `VPA`, … | `column1`, `column2`, … |
+| Rows | first record lost to the header | every row a record |
+
+A file being split by position is read this way whatever the box says — it has no header by
+definition. The box is what brings the *other* file into line with it.
 
 ## Leaving columns out
 
