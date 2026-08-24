@@ -32,7 +32,8 @@ public static class TableBuilder
         [.. Enumerable.Range(1, count).Select(n => $"column{n}")];
 
     public static DataTable Build(string path, string formatName, IReadOnlyList<string> header,
-                                  List<(int LineNumber, List<string> Values)> records, string? delimiter = null)
+                                  List<(int LineNumber, List<string> Values)> records, string? delimiter = null,
+                                  bool generatedColumnNames = false)
     {
         List<string> columns = TrimTrailingEmpty(header);
         if (columns.Count == 0)
@@ -54,7 +55,7 @@ public static class TableBuilder
             rows.Add(new DataRow(lineNumber, padded));
         }
 
-        return new DataTable(path, formatName, columns, rows, delimiter);
+        return new DataTable(path, formatName, columns, rows, delimiter, generatedColumnNames);
     }
 
     #endregion

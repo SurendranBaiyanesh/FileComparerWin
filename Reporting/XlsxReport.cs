@@ -37,6 +37,9 @@ public static class XlsxReport
     /// </summary>
     private const int HeaderStyle = 1;
 
+    /// <summary>What holds the values apart when the column names are numbers and are left out.</summary>
+    private const string GeneratedNameSeparator = ";";
+
     #endregion
 
     #region Fields
@@ -319,6 +322,12 @@ public static class XlsxReport
         IEnumerable<string> columns = table.Columns
             .Where(c => !SameColumn(c, subject))
             .Where(c => !result.KeyColumns.Any(k => SameColumn(k, c)));
+
+        // Names the file never had say nothing worth the room: "column1=EI; column2=0; column3=VPA" is
+        // mostly punctuation where "EI;0;VPA" is the record. Only the values, then, for a file whose
+        // columns were numbered rather than named.
+        if (table.HasGeneratedColumnNames)
+            return string.Join(GeneratedNameSeparator, columns.Select(c => table.GetValue(row, c)));
 
         // A delimited file gets its own separator back, so the cell reads the way the row reads in the
         // file it came from: with a |" file, 70986830|"8111|" rather than Test=70986830; Test1=8111.

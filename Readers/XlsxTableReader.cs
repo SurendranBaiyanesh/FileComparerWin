@@ -53,7 +53,8 @@ public sealed class XlsxTableReader : ITableReader
         // match whatever the other file made up - a sheet that starts at its data has none to give.
         if (options.NoHeaderRow)
             return TableBuilder.Build(path, $"{FormatName} (sheet '{sheetName}', no header row)",
-                TableBuilder.GeneratedHeader(cellRows.Max(r => r.Values.Count)), cellRows);
+                TableBuilder.GeneratedHeader(cellRows.Max(r => r.Values.Count)), cellRows,
+                generatedColumnNames: true);
 
         List<string> header = cellRows[0].Values;
         List<(int LineNumber, List<string> Values)> records = cellRows.Skip(1).Select(r => (r.LineNumber, r.Values)).ToList();

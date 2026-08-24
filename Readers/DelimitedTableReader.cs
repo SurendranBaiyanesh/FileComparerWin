@@ -69,7 +69,7 @@ public sealed class DelimitedTableReader : ITableReader
         }
 
         return TableBuilder.Build(path, $"{FormatName} ('{Describe(delimiter)}' separated, {content.EncodingName})",
-                                  header, records, delimiter);
+                                  header, records, delimiter, options.NoHeaderRow);
     }
 
     #endregion
@@ -99,7 +99,7 @@ public sealed class DelimitedTableReader : ITableReader
 
         return TableBuilder.Build(path,
             $"{FormatName} (split at {positions.Length} position(s), {content.EncodingName})",
-            header, records);
+            header, records, generatedColumnNames: true);
     }
 
     private static string ResolveDelimiter(string configured, string headerLine)

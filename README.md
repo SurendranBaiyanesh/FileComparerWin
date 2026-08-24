@@ -76,6 +76,11 @@ Turning `EnableCompressionInSingleFile` off in
 | 5 | Similar matches (±n) | Rows that agreed *only* because the range allowed it — one line per value, with how far apart the two were. |
 | 6 | Difference values | One line per differing column, so sorting on Column shows whether one field is behind every failure. |
 
+**Other column values** shows the rest of the record. Where the file named its columns, each value is
+written against its name — `Age=31; Salary=3000` — and where it did not, because the columns were cut
+by position and numbered `column1`, `column2`, …, the names are left out and only the values are
+written: `EI;0;VPA`. A name the file never had is not worth the room.
+
 Sheets 2, 5 and 6 divide the paired rows between them and never overlap: a row with anything genuinely
 wrong is a difference, whatever else it also has. Values written differently but meaning the same
 number — `123.00` and `123` — are equal outright and belong to sheet 2, not sheet 5; only values that

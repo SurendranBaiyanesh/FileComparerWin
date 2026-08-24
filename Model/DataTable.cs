@@ -12,13 +12,14 @@ public sealed class DataTable
     #region Constructor
 
     public DataTable(string sourcePath, string formatName, IReadOnlyList<string> columns, IReadOnlyList<DataRow> rows,
-                     string? delimiter = null)
+                     string? delimiter = null, bool generatedColumnNames = false)
     {
         SourcePath = sourcePath;
         FormatName = formatName;
         Columns = columns;
         Rows = rows;
         Delimiter = delimiter;
+        HasGeneratedColumnNames = generatedColumnNames;
 
         // Indexed on the canonical form so a header written with combining accents still answers to
         // the same name typed with precomposed ones.
@@ -42,6 +43,13 @@ public sealed class DataTable
     /// keeps it so that a row can be shown again in the shape it was written in.
     /// </summary>
     public string? Delimiter { get; }
+
+    /// <summary>
+    /// True when the file carried no names of its own and the columns were called column1, column2 and
+    /// so on. Reporting keeps it because such a name says nothing a reader does not already know:
+    /// writing "column1=EI" next to "column2=0" is three quarters punctuation.
+    /// </summary>
+    public bool HasGeneratedColumnNames { get; }
 
     #endregion
 
