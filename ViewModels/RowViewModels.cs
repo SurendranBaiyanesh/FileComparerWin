@@ -20,13 +20,10 @@ public sealed record SingleSideRow(string Key, int LineNumber, string RowText);
 public sealed class ColumnChoice : ObservableObject
 {
     #region Fields
-
     private bool _isSelected;
-
     #endregion
 
     #region Properties
-
     public required string Name { get; init; }
 
     /// <summary>Where the column occurs: both files, or only one of them.</summary>
@@ -37,7 +34,6 @@ public sealed class ColumnChoice : ObservableObject
         get => _isSelected;
         set => SetProperty(ref _isSelected, value);
     }
-
     #endregion
 }
 

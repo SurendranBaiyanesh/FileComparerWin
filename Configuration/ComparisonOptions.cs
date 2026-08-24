@@ -8,7 +8,6 @@ namespace FileComparerWindows.Configuration;
 public sealed class ComparisonOptions
 {
     #region Properties
-
     public string InputFilePath { get; set; } = string.Empty;
     public string OutputFilePath { get; set; } = string.Empty;
 
@@ -79,11 +78,9 @@ public sealed class ComparisonOptions
 
     /// <summary>The settings file the application reads at start-up and writes back to.</summary>
     public static string DefaultPath => Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-
     #endregion
 
     #region Public methods
-
     public static ComparisonOptions LoadFromFile(string path)
     {
         if (!File.Exists(path))
@@ -107,11 +104,9 @@ public sealed class ComparisonOptions
         string json = JsonSerializer.Serialize(settings, WriteOptions);
         File.WriteAllText(path, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
     }
-
     #endregion
 
     #region Fields
-
     private static readonly JsonSerializerOptions ReadOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -125,16 +120,13 @@ public sealed class ComparisonOptions
         // Column names carry accents; escaping them would leave a settings file no one can read.
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
-
     #endregion
 
     #region Nested types
-
     private sealed class AppSettings
     {
         [JsonPropertyName("FileComparer")]
         public ComparisonOptions? FileComparer { get; set; }
     }
-
     #endregion
 }

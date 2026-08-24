@@ -12,14 +12,11 @@ namespace FileComparerWindows.Readers;
 public static class SplitPositions
 {
     #region Constants
-
     /// <summary>What the dialog offers to mark cuts with, when the data is unlikely to contain it.</summary>
     public const char DefaultMarker = '|';
-
     #endregion
 
     #region Public methods
-
     /// <summary>
     /// The positions written as a list, in ascending order and without repeats. Separated by ; or , so
     /// that a list can be pasted from wherever it was written down, and anything that is not a position
@@ -109,6 +106,5 @@ public static class SplitPositions
 
         return values;
     }
-
     #endregion
 }

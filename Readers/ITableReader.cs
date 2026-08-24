@@ -22,7 +22,6 @@ public static class TableBuilder
     /// carried on the table so that reporting can show a row in the shape the file wrote it.
     /// </summary>
     #region Public methods
-
     /// <summary>
     /// Column names for a file that carries none: column1, column2 and so on. Shared by the readers so
     /// that a file cut by position and a spreadsheet read without its first row agree on what to call
@@ -57,11 +56,9 @@ public static class TableBuilder
 
         return new DataTable(path, formatName, columns, rows, delimiter, generatedColumnNames);
     }
-
     #endregion
 
     #region Private methods
-
     private static List<string> TrimTrailingEmpty(IReadOnlyList<string> values)
     {
         int last = values.Count - 1;
@@ -88,6 +85,5 @@ public static class TableBuilder
             columns[i] = candidate;
         }
     }
-
     #endregion
 }

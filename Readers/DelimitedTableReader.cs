@@ -8,23 +8,18 @@ namespace FileComparerWindows.Readers;
 public sealed class DelimitedTableReader : ITableReader
 {
     #region Fields
-
     // What detection tries. |" is deliberately not among them: every |" is also a |, so the two look
     // alike in a header, and a comma file holding one quoted field that ends in a pipe looks like it
     // too. Guessing it would misread files that are read correctly today, so it is chosen instead.
     private static readonly string[] CandidateDelimiters = [";", ",", "\t", "|"];
     private static readonly string[] Extensions = [".csv", ".txt", ".tsv", ".psv", ".dat", ".text"];
-
     #endregion
 
     #region Properties
-
     public string FormatName => "Delimited text";
-
     #endregion
 
     #region Public methods
-
     public bool CanRead(string path) =>
         Extensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
 
@@ -71,11 +66,9 @@ public sealed class DelimitedTableReader : ITableReader
         return TableBuilder.Build(path, $"{FormatName} ('{Describe(delimiter)}' separated, {content.EncodingName})",
                                   header, records, delimiter, options.NoHeaderRow);
     }
-
     #endregion
 
     #region Private methods
-
     /// <summary>
     /// Reads a file whose columns are marked out by position. Every line is a record - there is no
     /// header to read names from - so the columns are called column1, column2 and so on, one for each
@@ -214,6 +207,5 @@ public sealed class DelimitedTableReader : ITableReader
     }
 
     private static string Describe(string delimiter) => delimiter == "\t" ? "\\t" : delimiter;
-
     #endregion
 }

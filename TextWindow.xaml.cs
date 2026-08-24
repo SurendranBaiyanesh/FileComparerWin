@@ -6,7 +6,6 @@ namespace FileComparerWindows;
 public partial class TextWindow : Window
 {
     #region Constructor
-
     public TextWindow(string title, string text)
     {
         InitializeComponent();
@@ -14,11 +13,9 @@ public partial class TextWindow : Window
         Title = title;
         Body.Text = text;
     }
-
     #endregion
 
     #region Private methods
-
     private void OnCopy(object sender, RoutedEventArgs e)
     {
         try
@@ -30,6 +27,5 @@ public partial class TextWindow : Window
             // Another application had the clipboard open; not worth an error dialog.
         }
     }
-
     #endregion
 }

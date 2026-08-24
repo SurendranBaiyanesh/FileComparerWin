@@ -12,7 +12,6 @@ namespace FileComparerWindows.Model;
 public static class TextKey
 {
     #region Public methods
-
     public static string Canonical(string value)
     {
         // The overwhelmingly common case, and one that no normalisation could change.
@@ -29,6 +28,5 @@ public static class TextKey
             return value;
         }
     }
-
     #endregion
 }

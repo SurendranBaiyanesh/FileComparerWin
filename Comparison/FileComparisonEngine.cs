@@ -10,16 +10,13 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 {
     // Unit separator: cannot occur in real data, so composite keys stay unambiguous.
     #region Constants
-
     private const char KeySeparator = (char)0x1F;
 
     // What a decoder substitutes for bytes it could not make sense of.
     private const char ReplacementCharacter = (char)0xFFFD;
-
     #endregion
 
     #region Public methods
-
     public ComparisonResult Compare(DataTable input, DataTable output)
     {
         ValidateOptions();
@@ -114,11 +111,9 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
             $"  Output columns: {string.Join(", ", output.Columns)}" +
             EncodingHint(input, output));
     }
-
     #endregion
 
     #region Private methods
-
     private void ValidateOptions()
     {
         if (options.SimilarMatchRange < 0)
@@ -329,7 +324,6 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
     private static IEnumerable<string> DescribeDuplicates(string side, Dictionary<string, List<DataRow>> groups) =>
         groups.Where(g => g.Value.Count > 1)
             .Select(g => $"{side} file has {g.Value.Count} rows with key '{g.Key.Replace(KeySeparator, '|')}' (lines {string.Join(", ", g.Value.Select(r => r.LineNumber))}).");
-
     #endregion
 }
 

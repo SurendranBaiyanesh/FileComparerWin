@@ -6,7 +6,6 @@ namespace FileComparerWindows;
 public partial class App : Application
 {
     #region Protected methods
-
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -17,15 +16,13 @@ public partial class App : Application
         MainWindow = window;
         window.Show();
     }
+    #endregion
 
+    #region Private methods
     /// <summary>
     /// A comparison that goes wrong is reported in the window; this catches everything else, so that a
     /// fault in the interface itself does not close the window and lose the run behind it.
     /// </summary>
-    #endregion
-
-    #region Private methods
-
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         MessageBox.Show(
@@ -37,6 +34,5 @@ public partial class App : Application
         Environment.ExitCode = 2;
         e.Handled = true;
     }
-
     #endregion
 }

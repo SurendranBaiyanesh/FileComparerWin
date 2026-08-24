@@ -8,13 +8,10 @@ namespace FileComparerWindows.Readers;
 public sealed class JsonTableReader : ITableReader
 {
     #region Properties
-
     public string FormatName => "JSON";
-
     #endregion
 
     #region Public methods
-
     public bool CanRead(string path) =>
         string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase);
 
@@ -55,11 +52,9 @@ public sealed class JsonTableReader : ITableReader
 
         return TableBuilder.Build(path, FormatName, columns, records);
     }
-
     #endregion
 
     #region Private methods
-
     private static JsonElement? FindRecordArray(JsonElement root)
     {
         if (root.ValueKind == JsonValueKind.Array)
@@ -82,6 +77,5 @@ public sealed class JsonTableReader : ITableReader
         JsonValueKind.Object or JsonValueKind.Array => value.GetRawText(),
         _ => value.ToString()
     };
-
     #endregion
 }

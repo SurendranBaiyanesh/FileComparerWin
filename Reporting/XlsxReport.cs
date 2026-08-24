@@ -18,7 +18,6 @@ namespace FileComparerWindows.Reporting;
 public static class XlsxReport
 {
     #region Constants
-
     // A relationship's Type is a plain URI in an attribute, not a namespace: XNamespace + "name" would
     // be written out as "{namespace}name" and leave a package Excel will not open.
     private const string RelationshipType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
@@ -39,11 +38,9 @@ public static class XlsxReport
 
     /// <summary>What holds the values apart when the column names are numbers and are left out.</summary>
     private const string GeneratedNameSeparator = ";";
-
     #endregion
 
     #region Fields
-
     private static readonly XNamespace Main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
     private static readonly XNamespace DocumentRelationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     private static readonly XNamespace PackageRelationships = "http://schemas.openxmlformats.org/package/2006/relationships";
@@ -55,11 +52,9 @@ public static class XlsxReport
     /// </summary>
     private static readonly string[] StandardHeader =
         ["Keys", "Input file value", "Output file value", "Difference", "Other column values"];
-
     #endregion
 
     #region Public methods
-
     public static void Write(string path, ComparisonResult result, ComparisonOptions options)
     {
         // The value sheets first, because each one counts its own lines and the overview reports those
@@ -89,11 +84,9 @@ public static class XlsxReport
     }
 
     // ---------------------------------------------------------------- the sheets
-
     #endregion
 
     #region Private methods
-
     private static Sheet Overview(ComparisonResult result, ComparisonOptions options, List<Sheet> values)
     {
         Sheet sheet = new Sheet("Overview");
@@ -559,11 +552,9 @@ public static class XlsxReport
     }
 
     // ---------------------------------------------------------------- rows being built
-
     #endregion
 
     #region Nested types
-
     private sealed class Sheet
     {
         public Sheet(string name) => Name = SafeName(name);
@@ -625,6 +616,5 @@ public static class XlsxReport
 
         public bool IsEmpty => Amount is null && string.IsNullOrEmpty(Value);
     }
-
     #endregion
 }

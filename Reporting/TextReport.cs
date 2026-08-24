@@ -12,7 +12,6 @@ namespace FileComparerWindows.Reporting;
 public static class TextReport
 {
     #region Public methods
-
     public static string Build(ComparisonResult result, ComparisonOptions options)
     {
         StringBuilder text = new StringBuilder();
@@ -41,11 +40,9 @@ public static class TextReport
 
         return warnings;
     }
-
     #endregion
 
     #region Private methods
-
     private static void WriteHeader(StringBuilder text, ComparisonResult result, ComparisonOptions options)
     {
         WriteRule(text);
@@ -126,7 +123,6 @@ public static class TextReport
                 text.AppendLine($"        input  (line {mismatch.InputRow.LineNumber}): {mismatch.InputRow.ToDisplayString()}");
                 text.AppendLine($"        output (line {mismatch.OutputRow.LineNumber}): {mismatch.OutputRow.ToDisplayString()}");
             }
-
         }
 
         WriteRowList(text, "Present in input but missing from output", result.MissingInOutput);
@@ -159,6 +155,5 @@ public static class TextReport
 
     private static void WriteRule(StringBuilder text) =>
         text.AppendLine(new string('=', 78));
-
     #endregion
 }

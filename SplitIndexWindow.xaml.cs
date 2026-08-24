@@ -16,13 +16,10 @@ namespace FileComparerWindows;
 public partial class SplitIndexWindow : Window
 {
     #region Fields
-
     private readonly string _originalRow;
-
     #endregion
 
     #region Constructor
-
     public SplitIndexWindow(string title, string prompt, string firstRow, string currentPositions)
     {
         InitializeComponent();
@@ -39,18 +36,14 @@ public partial class SplitIndexWindow : Window
 
         Loaded += (_, _) => RowBox.Focus();
     }
-
     #endregion
 
     #region Properties
-
     /// <summary>The positions the row was marked up into, ready for the Split at box.</summary>
     public string Positions { get; private set; } = string.Empty;
-
     #endregion
 
     #region Private methods
-
     private char Marker => MarkerBox.Text.Length > 0 ? MarkerBox.Text[0] : SplitPositions.DefaultMarker;
 
     private void OnRowChanged(object sender, TextChangedEventArgs e) => Refresh();
@@ -92,12 +85,9 @@ public partial class SplitIndexWindow : Window
     }
 
     private void OnAccept(object sender, RoutedEventArgs e) => DialogResult = true;
-
     #endregion
 
     #region Nested types
-
     private sealed record PreviewRow(string Name, int Position, int Width, string Value);
-
     #endregion
 }

@@ -21,15 +21,12 @@ public partial class ColumnPickerWindow : Window
     /// order the chosen names are handed back in, which is what makes dragging worth doing.
     /// </summary>
     #region Fields
-
     private readonly ObservableCollection<ColumnChoice> _choices;
 
     private ColumnChoice? _dragging;
-
     #endregion
 
     #region Constructor
-
     public ColumnPickerWindow(string title, string prompt, IReadOnlyList<ColumnChoice> choices)
     {
         InitializeComponent();
@@ -45,18 +42,14 @@ public partial class ColumnPickerWindow : Window
         UpdateSelectionCount();
         Loaded += (_, _) => FilterBox.Focus();
     }
-
     #endregion
 
     #region Properties
-
     /// <summary>The ticked names, in the order they stand in the list.</summary>
     public IReadOnlyList<string> SelectedColumns { get; private set; } = [];
-
     #endregion
 
     #region Private methods
-
     private void OnChoiceChanged(object? sender, PropertyChangedEventArgs e) => UpdateSelectionCount();
 
     private void UpdateSelectionCount()
@@ -185,6 +178,5 @@ public partial class ColumnPickerWindow : Window
 
         base.OnClosed(e);
     }
-
     #endregion
 }

@@ -9,13 +9,10 @@ namespace FileComparerWindows.Readers;
 public sealed class XmlTableReader : ITableReader
 {
     #region Properties
-
     public string FormatName => "XML";
-
     #endregion
 
     #region Public methods
-
     public bool CanRead(string path) =>
         string.Equals(Path.GetExtension(path), ".xml", StringComparison.OrdinalIgnoreCase);
 
@@ -53,7 +50,6 @@ public sealed class XmlTableReader : ITableReader
     #endregion
 
     #region Private methods
-
     private static List<XElement> FindRowElements(XElement root)
     {
         XElement current = root;
@@ -79,6 +75,5 @@ public sealed class XmlTableReader : ITableReader
 
         return cells;
     }
-
     #endregion
 }

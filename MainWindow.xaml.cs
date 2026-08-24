@@ -12,23 +12,18 @@ namespace FileComparerWindows;
 public partial class MainWindow : Window, IUserInteraction
 {
     #region Constants
-
     private const uint WmCopyGlobalData = 0x0049;
     private const uint WmCopyData = 0x004A;
     private const uint WmDropFiles = 0x0233;
     private const uint MsgfltAllow = 1;
-
     #endregion
 
     #region Fields
-
     private readonly MainViewModel _viewModel;
     private readonly string[] _args;
-
     #endregion
 
     #region Constructor
-
     public MainWindow(string[] args)
     {
         InitializeComponent();
@@ -40,11 +35,9 @@ public partial class MainWindow : Window, IUserInteraction
         _viewModel.Initialise(args);
         Loaded += OnLoaded;
     }
-
     #endregion
 
     #region Public methods
-
     // ---------------------------------------------------------------- IUserInteraction
 
     public string? BrowseForOpen(string title, string filter, string? currentPath)
@@ -105,11 +98,9 @@ public partial class MainWindow : Window, IUserInteraction
             MessageBox.Show(this, "The clipboard was busy. Try again.", "Copy", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
-
     #endregion
 
     #region Private methods
-
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         AcceptDropsThroughout(FilesCard);
@@ -290,6 +281,5 @@ public partial class MainWindow : Window, IUserInteraction
             return string.Empty;
         }
     }
-
     #endregion
 }

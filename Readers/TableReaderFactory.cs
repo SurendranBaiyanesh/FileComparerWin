@@ -7,7 +7,6 @@ namespace FileComparerWindows.Readers;
 public sealed class TableReaderFactory
 {
     #region Constants
-
     /// <summary>Every extension a reader claims, as an Open dialog filter.</summary>
     public const string FileDialogFilter =
         "Data files|*.csv;*.txt;*.tsv;*.psv;*.dat;*.text;*.xml;*.json;*.xlsx;*.xlsm|" +
@@ -16,11 +15,9 @@ public sealed class TableReaderFactory
         "JSON (*.json)|*.json|" +
         "Excel workbook (*.xlsx;*.xlsm)|*.xlsx;*.xlsm|" +
         "All files (*.*)|*.*";
-
     #endregion
 
     #region Fields
-
     private readonly List<ITableReader> _readers =
     [
         new DelimitedTableReader(),
@@ -28,11 +25,9 @@ public sealed class TableReaderFactory
         new JsonTableReader(),
         new XlsxTableReader()
     ];
-
     #endregion
 
     #region Public methods
-
     public DataTable Load(string path, ComparisonOptions options)
     {
         if (!File.Exists(path))
@@ -44,6 +39,5 @@ public sealed class TableReaderFactory
 
         return reader.Read(path, options);
     }
-
     #endregion
 }

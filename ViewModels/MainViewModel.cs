@@ -14,7 +14,6 @@ namespace FileComparerWindows.ViewModels;
 public sealed class MainViewModel : ObservableObject
 {
     #region Constants
-
     private const int ExitMatch = 0;
     private const int ExitDifferences = 1;
     private const int ExitError = 2;
@@ -24,11 +23,9 @@ public sealed class MainViewModel : ObservableObject
     /// a list reads as a fault rather than as a choice, so the default is spelt out and mapped back.
     /// </summary>
     private const string DetectLabel = "detect";
-
     #endregion
 
     #region Fields
-
     private readonly IUserInteraction _interaction;
     private readonly RelayCommand _compareCommand;
 
@@ -81,11 +78,9 @@ public sealed class MainViewModel : ObservableObject
     private string _differencesFilterSummary = string.Empty;
     private string _missingRowsFilterSummary = string.Empty;
     private string _extraRowsFilterSummary = string.Empty;
-
     #endregion
 
     #region Constructor
-
     public MainViewModel(IUserInteraction interaction)
     {
         _interaction = interaction;
@@ -129,11 +124,9 @@ public sealed class MainViewModel : ObservableObject
         ShowCommandLineHelpCommand = new RelayCommand(() => _interaction.ShowText("Command line", CommandLine.HelpText));
         ShowAboutCommand = new RelayCommand(ShowAbout);
     }
-
     #endregion
 
     #region Properties
-
     public LoadedFile Input { get; }
     public LoadedFile Output { get; }
 
@@ -492,11 +485,9 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>The same thing with both headers spelt out, as the tooltip and as the error Compare stops with.</summary>
     public string ColumnMismatchDetail => _columnMismatch?.Detail ?? string.Empty;
-
     #endregion
 
     #region Public methods
-
     /// <summary>Fills the window from the settings file and whatever the command line added on top.</summary>
     public void Initialise(string[] args)
     {
@@ -599,11 +590,9 @@ public sealed class MainViewModel : ObservableObject
         NoHeaderRow = NoHeaderRow,
         Encoding = Encoding
     };
-
     #endregion
 
     #region Private methods
-
     private static bool IsDetect(string? value) =>
         string.IsNullOrWhiteSpace(value) || string.Equals(value.Trim(), DetectLabel, StringComparison.OrdinalIgnoreCase);
 
@@ -1159,6 +1148,5 @@ public sealed class MainViewModel : ObservableObject
         not interpreted. Two spreadsheets still compare correctly against each other; a spreadsheet
         compared against a text file needs the dates written as text.
         """);
-
     #endregion
 }
