@@ -23,6 +23,9 @@ public sealed class MainViewModel : ObservableObject
 	/// a list reads as a fault rather than as a choice, so the default is spelt out and mapped back.
 	/// </summary>
 	private const string DetectLabel = "detect";
+
+	/// <summary>How much of a first value the column picker shows before cutting it short.</summary>
+	private const int SampleLength = 40;
 	#endregion
 
 	#region Fields
@@ -918,6 +921,26 @@ public sealed class MainViewModel : ObservableObject
 		if(picked is not null) assign(string.Join(", ", picked));
 	}
 
+	/// <summary>
+	/// What the column holds in the first row that was read, taken from the input where it has the
+	/// column and from the output otherwise. Long values are cut short: the picker is there to be
+	/// glanced at, and a hundred characters of address would push the name off the row.
+	/// </summary>
+	private string FirstValue(string column)
+	{
+		string value = Value(this.Input, column, this.NoHeaderRow);
+		if(value.Length == 0) value = Value(this.Output, column, this.NoHeaderRow);
+
+		return value.Length <= SampleLength ? value : value[..SampleLength] + "…";
+	}
+
+	static string Value(LoadedFile file, string column, bool bWithHeader)
+	{
+		int nRow = bWithHeader ? 1 : 0;
+
+		return file.Table?.Rows.Count > nRow ? file.Table.HasColumn(column) ? file.Table.GetValue(file.Table.Rows[nRow], column) : string.Empty : string.Empty;
+	}
+
 	private List<ColumnChoice> BuildColumnChoices(string current)
 	{
 		HashSet<string> selected = new(SplitList(current).Select(TextKey.Canonical), StringComparer.OrdinalIgnoreCase);
@@ -935,6 +958,7 @@ public sealed class MainViewModel : ObservableObject
 			            {
 				            Name = name,
 				            Availability = inInput && inOutput ? "both files" : inInput ? "input only" : "output only",
+				            Sample = FirstValue(name),
 				            IsSelected = selected.Contains(TextKey.Canonical(name))
 			            });
 		}

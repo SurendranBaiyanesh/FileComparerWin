@@ -21,6 +21,13 @@ public sealed class ColumnChoice : ObservableObject
 	/// <summary>Where the column occurs: both files, or only one of them.</summary>
 	public required string Availability { get; init; }
 
+	/// <summary>
+	/// What the column holds in the first row, so that a name like column7 can be told from the others
+	/// by what is under it. A number, a date and a padded code are recognisable on sight where a
+	/// generated name says nothing at all.
+	/// </summary>
+	public string Sample { get; init; } = string.Empty;
+
 	public bool IsSelected
 	{
 		get => _isSelected;

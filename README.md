@@ -97,7 +97,7 @@ the overview are numbers. The workbook is built straight into the Open XML packa
 | | |
 | --- | --- |
 | **Files** | Input and output paths, with what was read from each, and a line in red when the two files do not carry the same columns. |
-| **Columns** | Key and Compare. **Pick…** ticks names off the headers the files actually have, so a column called `Name des Versicherten/Begünstigten` need not be typed. |
+| **Columns** | Key and Compare. **Pick…** ticks names off the headers the files actually have, so a column called `Name des Versicherten/Begünstigten` need not be typed. Each row shows where the column occurs and what it holds in the first row — `column4  both files  100.35` — which is the only way to tell one generated name from another. |
 | **Options** | Ignore case, trim values, similar match, ± range, delimiter, encoding. |
 | **Verdict** | SUCCESS or FAILED, the columns the run used, and the six counts. |
 | **Value differences** | One row per differing column, with the key, both values and both line numbers. Select a row to see the two source rows in full. |
