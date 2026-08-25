@@ -13,141 +13,135 @@ namespace FileComparerWindows.ViewModels;
 /// </summary>
 public sealed class LoadedFile(string label) : ObservableObject
 {
-    #region Fields
-    private static readonly TableReaderFactory Factory = new TableReaderFactory();
+	#region Fields
+	private static readonly TableReaderFactory Factory = new();
 
-    private string _path = string.Empty;
-    private string _description = "No file chosen.";
-    private bool _hasError;
-    private DataTable? _table;
-    private string _signature = string.Empty;
-    private CancellationTokenSource? _pendingRefresh;
-    #endregion
+	private string _path = string.Empty;
+	private string _description = "No file chosen.";
+	private bool _hasError;
+	private DataTable? _table;
+	private string _signature = string.Empty;
+	private CancellationTokenSource? _pendingRefresh;
+	#endregion
 
-    #region Properties
-    public string Label { get; } = label;
+	#region Properties
+	public string Label { get; } = label;
 
-    public string Path
-    {
-        get => _path;
-        set
-        {
-            // Paths pasted from Explorer usually arrive wrapped in quotes.
-            if (SetProperty(ref _path, (value ?? string.Empty).Trim().Trim('"', '\'')))
-                Clear();
-        }
-    }
+	public string Path
+	{
+		get => _path;
+		set
+		{
+			// Paths pasted from Explorer usually arrive wrapped in quotes.
+			if(SetProperty(ref _path, (value ?? string.Empty).Trim().Trim('"', '\''))) Clear();
+		}
+	}
 
-    /// <summary>Format, encoding and row count once read; the reason it could not be read otherwise.</summary>
-    public string Description
-    {
-        get => _description;
-        private set => SetProperty(ref _description, value);
-    }
+	/// <summary>Format, encoding and row count once read; the reason it could not be read otherwise.</summary>
+	public string Description
+	{
+		get => _description;
+		private set => SetProperty(ref _description, value);
+	}
 
-    public bool HasError
-    {
-        get => _hasError;
-        private set => SetProperty(ref _hasError, value);
-    }
+	public bool HasError
+	{
+		get => _hasError;
+		private set => SetProperty(ref _hasError, value);
+	}
 
-    public DataTable? Table
-    {
-        get => _table;
-        private set
-        {
-            if (SetProperty(ref _table, value))
-                RaisePropertyChanged(nameof(Columns));
-        }
-    }
+	public DataTable? Table
+	{
+		get => _table;
+		private set
+		{
+			if(SetProperty(ref _table, value)) RaisePropertyChanged(nameof(this.Columns));
+		}
+	}
 
-    public IReadOnlyList<string> Columns => Table?.Columns ?? [];
-    #endregion
+	public IReadOnlyList<string> Columns => this.Table?.Columns ?? [];
+	#endregion
 
-    #region Public methods
-    /// <summary>
-    /// Reads the file a moment from now, and drops the attempt if another one is asked for first. A path
-    /// typed by hand is momentarily half a path, and reading each of those in turn would fill the
-    /// window with errors about files that were never meant.
-    /// </summary>
-    public async Task RefreshLaterAsync(ComparisonOptions options, int delayMilliseconds = 350)
-    {
-        CancellationTokenSource refresh = new CancellationTokenSource();
-        CancellationTokenSource? superseded = Interlocked.Exchange(ref _pendingRefresh, refresh);
-        superseded?.Cancel();
-        superseded?.Dispose();
+	#region Public methods
+	/// <summary>
+	/// Reads the file a moment from now, and drops the attempt if another one is asked for first. A path
+	/// typed by hand is momentarily half a path, and reading each of those in turn would fill the
+	/// window with errors about files that were never meant.
+	/// </summary>
+	public async Task RefreshLaterAsync(ComparisonOptions options, int delayMilliseconds = 350)
+	{
+		CancellationTokenSource refresh = new();
+		CancellationTokenSource? superseded = Interlocked.Exchange(ref _pendingRefresh, refresh);
+		superseded?.Cancel();
+		superseded?.Dispose();
 
-        try
-        {
-            await Task.Delay(delayMilliseconds, refresh.Token);
-            await RefreshAsync(options);
-        }
-        catch (OperationCanceledException)
-        {
-            // Superseded by a later keystroke; that attempt will do the reading.
-        }
-    }
+		try
+		{
+			await Task.Delay(delayMilliseconds, refresh.Token);
+			await RefreshAsync(options);
+		}
+		catch(OperationCanceledException)
+		{
+			// Superseded by a later keystroke; that attempt will do the reading.
+		}
+	}
 
-    /// <summary>
-    /// Reads the file unless the last read already used the same file and the same reader settings.
-    /// The file's own timestamp is part of that test, so a file re-exported behind the window's back
-    /// is picked up rather than silently compared in its old form.
-    /// </summary>
-    public async Task RefreshAsync(ComparisonOptions options)
-    {
-        if (_path.Length == 0)
-        {
-            Clear();
-            return;
-        }
+	/// <summary>
+	/// Reads the file unless the last read already used the same file and the same reader settings.
+	/// The file's own timestamp is part of that test, so a file re-exported behind the window's back
+	/// is picked up rather than silently compared in its old form.
+	/// </summary>
+	public async Task RefreshAsync(ComparisonOptions options)
+	{
+		if(_path.Length == 0)
+		{
+			Clear();
+			return;
+		}
 
-        string signature = BuildSignature(options);
-        if (Table is not null && signature == _signature)
-            return;
+		string signature = BuildSignature(options);
+		if(this.Table is not null && signature == _signature) return;
 
-        Description = "Reading…";
-        HasError = false;
+		this.Description = "Reading…";
+		this.HasError = false;
 
-        try
-        {
-            string path = _path;
-            DataTable table = await Task.Run(() => Factory.Load(path, options));
+		try
+		{
+			string path = _path;
+			DataTable table = await Task.Run(() => Factory.Load(path, options));
 
-            Table = table;
-            _signature = signature;
-            Description = $"{table.FormatName} · {table.Rows.Count:N0} row(s) · {table.Columns.Count} column(s)";
-        }
-        catch (Exception exception)
-        {
-            Table = null;
-            _signature = string.Empty;
-            HasError = true;
-            Description = exception.Message;
-        }
-    }
-    #endregion
+			this.Table = table;
+			_signature = signature;
+			this.Description = $"{table.FormatName} · {table.Rows.Count:N0} row(s) · {table.Columns.Count} column(s)";
+		}
+		catch(Exception exception)
+		{
+			this.Table = null;
+			_signature = string.Empty;
+			this.HasError = true;
+			this.Description = exception.Message;
+		}
+	}
+	#endregion
 
-    #region Private methods
-    private void Clear()
-    {
-        Table = null;
-        _signature = string.Empty;
-        HasError = false;
-        Description = _path.Length == 0 ? "No file chosen." : "Reading…";
-    }
+	#region Private methods
+	private void Clear()
+	{
+		this.Table = null;
+		_signature = string.Empty;
+		this.HasError = false;
+		this.Description = _path.Length == 0 ? "No file chosen." : "Reading…";
+	}
 
-    private string BuildSignature(ComparisonOptions options)
-    {
-        // Only the settings that change how the file is read belong here.
-        string stamp = File.Exists(_path)
-            ? File.GetLastWriteTimeUtc(_path).Ticks.ToString() + ":" + new FileInfo(_path).Length
-            : "missing";
+	private string BuildSignature(ComparisonOptions options)
+	{
+		// Only the settings that change how the file is read belong here.
+		string stamp = File.Exists(_path) ? File.GetLastWriteTimeUtc(_path).Ticks.ToString() + ":" + new FileInfo(_path).Length : "missing";
 
-        // The split positions belong here as much as the delimiter does: without them a file already
-        // read would be handed back unchanged when the positions were altered, and Convert would look
-        // as though it had done nothing.
-        return string.Join('|', _path, stamp, options.Encoding, options.Delimiter,
-                           options.SplitIndexes, options.NoHeaderRow);
-    }
-    #endregion
+		// The split positions belong here as much as the delimiter does: without them a file already
+		// read would be handed back unchanged when the positions were altered, and Convert would look
+		// as though it had done nothing.
+		return string.Join('|', _path, stamp, options.Encoding, options.Delimiter, options.SplitIndexes, options.NoHeaderRow);
+	}
+	#endregion
 }

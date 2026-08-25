@@ -11,22 +11,21 @@ namespace FileComparerWindows.Model;
 /// </summary>
 public static class TextKey
 {
-    #region Public methods
-    public static string Canonical(string value)
-    {
-        // The overwhelmingly common case, and one that no normalisation could change.
-        if (value.Length == 0 || Ascii.IsValid(value))
-            return value;
+	#region Public methods
+	public static string Canonical(string value)
+	{
+		// The overwhelmingly common case, and one that no normalisation could change.
+		if(value.Length == 0 || Ascii.IsValid(value)) return value;
 
-        try
-        {
-            return value.IsNormalized(NormalizationForm.FormC) ? value : value.Normalize(NormalizationForm.FormC);
-        }
-        catch (ArgumentException)
-        {
-            // Unpaired surrogates cannot be normalised; match them exactly as they came in.
-            return value;
-        }
-    }
-    #endregion
+		try
+		{
+			return value.IsNormalized(NormalizationForm.FormC) ? value : value.Normalize(NormalizationForm.FormC);
+		}
+		catch(ArgumentException)
+		{
+			// Unpaired surrogates cannot be normalised; match them exactly as they came in.
+			return value;
+		}
+	}
+	#endregion
 }

@@ -10,6 +10,4 @@ using System.Windows;
 // Where WPF looks for the dictionaries that style a control the assembly does not style itself.
 // This application draws no custom controls and carries no Themes\generic.xaml, so there is no
 // theme-specific dictionary to find, and everything generic sits in App.xaml inside this assembly.
-[assembly: ThemeInfo(
-    ResourceDictionaryLocation.None,
-    ResourceDictionaryLocation.SourceAssembly)]
+[assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
