@@ -33,12 +33,12 @@ public static class TextReport
 	/// </summary>
 	public static List<string> CollectWarnings(ComparisonResult result)
 	{
-		List<string> warnings = new();
+		List<string> liWarnings = new();
 
-		warnings.AddRange(result.OptionWarnings);
-		warnings.AddRange(result.DuplicateKeyWarnings);
+		liWarnings.AddRange(result.OptionWarnings);
+		liWarnings.AddRange(result.DuplicateKeyWarnings);
 
-		return warnings;
+		return liWarnings;
 	}
 	#endregion
 
@@ -87,11 +87,11 @@ public static class TextReport
 
 	private static void WriteWarnings(StringBuilder text, ComparisonResult result)
 	{
-		List<string> warnings = CollectWarnings(result);
-		if(warnings.Count == 0) return;
+		List<string> liWarnings = CollectWarnings(result);
+		if(liWarnings.Count == 0) return;
 
 		text.AppendLine("  WARNINGS");
-		foreach(string warning in warnings)
+		foreach(string warning in liWarnings)
 		{
 			text.AppendLine($"    - {warning}");
 		}

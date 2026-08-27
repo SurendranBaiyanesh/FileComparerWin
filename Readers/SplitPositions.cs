@@ -13,7 +13,7 @@ public static class SplitPositions
 {
 	#region Constants
 	/// <summary>What the dialog offers to mark cuts with, when the data is unlikely to contain it.</summary>
-	public const char DefaultMarker = '|';
+	public const char DEFAULT_MARKER = '|';
 	#endregion
 
 	#region Public methods
@@ -34,9 +34,9 @@ public static class SplitPositions
 		];
 	}
 
-	public static string Describe(IEnumerable<int> positions)
+	public static string Describe(IEnumerable<int> liPositions)
 	{
-		return string.Join(";", positions);
+		return string.Join(";", liPositions);
 	}
 
 	/// <summary>
@@ -46,16 +46,16 @@ public static class SplitPositions
 	/// </summary>
 	public static int[] FromMarkedLine(string marked, char marker)
 	{
-		List<int> positions = new();
-		int seen = 0;
+		List<int> liPositions = new();
+		int nSeen = 0;
 
 		foreach(char c in marked)
 		{
-			if(c != marker) seen++;
-			else if(seen > 0) positions.Add(seen - 1);
+			if(c != marker) nSeen++;
+			else if(nSeen > 0) liPositions.Add(nSeen - 1);
 		}
 
-		return [.. positions.Distinct().Order()];
+		return [.. liPositions.Distinct().Order()];
 	}
 
 	/// <summary>The line as it was before the separators were typed into it.</summary>
@@ -73,12 +73,12 @@ public static class SplitPositions
 	/// either way, because <see cref="Split"/> clamps to the length of the line; without this the
 	/// column would be dropped the moment the dialog was opened and confirmed.
 	/// </summary>
-	public static string Mark(string line, int[] positions, char marker)
+	public static string Mark(string line, int[] liPositions, char marker)
 	{
-		if(positions.Length == 0) return line;
+		if(liPositions.Length == 0) return line;
 
-		System.Text.StringBuilder marked = new(line.Length + positions.Length);
-		HashSet<int> cuts = [.. positions];
+		System.Text.StringBuilder marked = new(line.Length + liPositions.Length);
+		HashSet<int> cuts = [.. liPositions];
 
 		for(int i = 0; i < line.Length; i++)
 		{
@@ -86,7 +86,7 @@ public static class SplitPositions
 			if(cuts.Contains(i)) marked.Append(marker);
 		}
 
-		if(positions.Any(p => p >= line.Length) && (marked.Length == 0 || marked[^1] != marker)) marked.Append(marker);
+		if(liPositions.Any(p => p >= line.Length) && (marked.Length == 0 || marked[^1] != marker)) marked.Append(marker);
 
 		return marked.ToString();
 	}
@@ -96,19 +96,19 @@ public static class SplitPositions
 	/// the columns it does not reach come back empty, which is what a short record in a fixed-width
 	/// file means.
 	/// </summary>
-	public static List<string> Split(string line, int[] positions)
+	public static List<string> Split(string line, int[] liPositions)
 	{
-		List<string> values = new(positions.Length);
-		int start = 0;
+		List<string> liValues = new(liPositions.Length);
+		int nStart = 0;
 
-		foreach(int position in positions)
+		foreach(int position in liPositions)
 		{
-			int last = Math.Min(position, line.Length - 1);
-			values.Add(start <= last ? line.Substring(start, last - start + 1) : string.Empty);
-			start = position + 1;
+			int nLast = Math.Min(position, line.Length - 1);
+			liValues.Add(nStart <= nLast ? line.Substring(nStart, nLast - nStart + 1) : string.Empty);
+			nStart = position + 1;
 		}
 
-		return values;
+		return liValues;
 	}
 	#endregion
 }

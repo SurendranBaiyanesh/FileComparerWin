@@ -27,9 +27,9 @@ public sealed class JsonTableReader : ITableReader
 
 		JsonElement array = FindRecordArray(document.RootElement) ?? throw new InvalidDataException($"No array of records found in '{path}'.");
 
-		List<string> columns = new();
+		List<string> liColumns = new();
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
-		List<Dictionary<string, string>> cellsPerRow = new();
+		List<Dictionary<string, string>> liCellsPerRow = new();
 
 		foreach(JsonElement item in array.EnumerateArray())
 		{
@@ -39,15 +39,15 @@ public sealed class JsonTableReader : ITableReader
 			foreach(JsonProperty property in item.EnumerateObject())
 			{
 				cells[property.Name] = ToText(property.Value);
-				if(seen.Add(property.Name)) columns.Add(property.Name);
+				if(seen.Add(property.Name)) liColumns.Add(property.Name);
 			}
 
-			cellsPerRow.Add(cells);
+			liCellsPerRow.Add(cells);
 		}
 
-		List<(int, List<string>)> records = cellsPerRow.Select((cells, index) => (index + 1, columns.Select(c => cells.GetValueOrDefault(c, string.Empty)).ToList())).ToList();
+		List<(int, List<string>)> records = liCellsPerRow.Select((cells, index) => (index + 1, liColumns.Select(c => cells.GetValueOrDefault(c, string.Empty)).ToList())).ToList();
 
-		return TableBuilder.Build(path, this.FormatName, columns, records);
+		return TableBuilder.Build(path, this.FormatName, liColumns, records);
 	}
 	#endregion
 

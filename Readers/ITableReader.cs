@@ -35,50 +35,50 @@ public static class TableBuilder
 
 	public static DataTable Build(string path, string formatName, IReadOnlyList<string> header, List<(int LineNumber, List<string> Values)> records, string? delimiter = null, bool generatedColumnNames = false)
 	{
-		List<string> columns = TrimTrailingEmpty(header);
-		if(columns.Count == 0) throw new InvalidDataException($"No column headers found in '{path}'.");
+		List<string> liColumns = TrimTrailingEmpty(header);
+		if(liColumns.Count == 0) throw new InvalidDataException($"No column headers found in '{path}'.");
 
-		int width = Math.Max(columns.Count, records.Count == 0 ? 0 : records.Max(r => TrimTrailingEmpty(r.Values).Count));
-		for(int i = columns.Count; i < width; i++)
-			columns.Add($"Column{i + 1}");
+		int nWidth = Math.Max(liColumns.Count, records.Count == 0 ? 0 : records.Max(r => TrimTrailingEmpty(r.Values).Count));
+		for(int i = liColumns.Count; i < nWidth; i++)
+			liColumns.Add($"Column{i + 1}");
 
-		EnsureUniqueNames(columns);
+		EnsureUniqueNames(liColumns);
 
-		List<DataRow> rows = new(records.Count);
+		List<DataRow> liRows = new(records.Count);
 		foreach((int lineNumber, List<string> values) in records)
 		{
-			string[] padded = new string[width];
-			for(int i = 0; i < width; i++) padded[i] = i < values.Count ? values[i] : string.Empty;
+			string[] liPadded = new string[nWidth];
+			for(int i = 0; i < nWidth; i++) liPadded[i] = i < values.Count ? values[i] : string.Empty;
 
-			rows.Add(new DataRow(lineNumber, padded));
+			liRows.Add(new DataRow(lineNumber, liPadded));
 		}
 
-		return new DataTable(path, formatName, columns, rows, delimiter, generatedColumnNames);
+		return new DataTable(path, formatName, liColumns, liRows, delimiter, generatedColumnNames);
 	}
 	#endregion
 
 	#region Private methods
 	private static List<string> TrimTrailingEmpty(IReadOnlyList<string> values)
 	{
-		int last = values.Count - 1;
-		while(last >= 0 && string.IsNullOrWhiteSpace(values[last])) last--;
+		int nLast = values.Count - 1;
+		while(nLast >= 0 && string.IsNullOrWhiteSpace(values[nLast])) nLast--;
 
-		return [.. values.Take(last + 1).Select(v => v ?? string.Empty)];
+		return [.. values.Take(nLast + 1).Select(v => v ?? string.Empty)];
 	}
 
-	private static void EnsureUniqueNames(List<string> columns)
+	private static void EnsureUniqueNames(List<string> liColumns)
 	{
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
-		for(int i = 0; i < columns.Count; i++)
+		for(int i = 0; i < liColumns.Count; i++)
 		{
-			string name = columns[i].Trim();
-			if(name.Length == 0) name = $"Column{i + 1}";
+			string strName = liColumns[i].Trim();
+			if(strName.Length == 0) strName = $"Column{i + 1}";
 
-			string candidate = name;
-			int suffix = 2;
-			while(!seen.Add(candidate)) candidate = $"{name}_{suffix++}";
+			string strCandidate = strName;
+			int nSuffix = 2;
+			while(!seen.Add(strCandidate)) strCandidate = $"{strName}_{nSuffix++}";
 
-			columns[i] = candidate;
+			liColumns[i] = strCandidate;
 		}
 	}
 	#endregion

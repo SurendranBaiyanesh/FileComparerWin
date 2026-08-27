@@ -54,18 +54,18 @@ public partial class ColumnPickerWindow : Window
 
     private void UpdateSelectionCount()
     {
-        int selected = _choices.Count(c => c.IsSelected);
-        SelectionCount.Text = selected == 0 ? "nothing selected" : $"{selected} of {_choices.Count} selected";
+        int nSelected = _choices.Count(c => c.IsSelected);
+        SelectionCount.Text = nSelected == 0 ? "nothing selected" : $"{nSelected} of {_choices.Count} selected";
     }
 
     private void OnFilterChanged(object sender, TextChangedEventArgs e)
     {
-        string filter = FilterBox.Text.Trim();
+        string strFilter = FilterBox.Text.Trim();
         ICollectionView view = CollectionViewSource.GetDefaultView(ColumnList.ItemsSource);
 
-        view.Filter = filter.Length == 0
+        view.Filter = strFilter.Length == 0
             ? null
-            : item => item is ColumnChoice choice && choice.Name.Contains(filter, StringComparison.CurrentCultureIgnoreCase);
+            : item => item is ColumnChoice choice && choice.Name.Contains(strFilter, StringComparison.CurrentCultureIgnoreCase);
     }
 
     /// <summary>All and None act on what the filter is showing, so they stay useful on a wide file.</summary>
@@ -117,18 +117,18 @@ public partial class ColumnPickerWindow : Window
         }
 
         Point point = e.GetPosition(ColumnList);
-        int from = _choices.IndexOf(_dragging);
-        if (from < 0)
+        int nFrom = _choices.IndexOf(_dragging);
+        if (nFrom < 0)
             return;
 
         // Above the list is the way to the top, and below it the way to the bottom. Without this a
         // column could only be moved as far as the rows that happen to be on screen.
-        int to = point.Y < 0 ? 0
+        int nTo = point.Y < 0 ? 0
                : point.Y > ColumnList.ActualHeight ? _choices.Count - 1
                : IndexUnder(point);
 
-        if (to >= 0 && to != from)
-            _choices.Move(from, to);
+        if (nTo >= 0 && nTo != nFrom)
+            _choices.Move(nFrom, nTo);
     }
 
     private void OnListMouseUp(object sender, MouseButtonEventArgs e) => EndDrag();

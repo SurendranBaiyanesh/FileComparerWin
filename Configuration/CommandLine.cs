@@ -31,80 +31,80 @@ public static class CommandLine
 	{
 		for(int i = 0; i < args.Length; i++)
 		{
-			string arg = args[i];
+			string strArg = args[i];
 
 			string? Next()
 			{
 				return i + 1 < args.Length ? args[++i] : null;
 			}
 
-			if(Matches(arg, "--input", "-i"))
+			if(Matches(strArg, "--input", "-i"))
 			{
 				options.InputFilePath = Next() ?? options.InputFilePath;
 			}
-			else if(Matches(arg, "--output", "-o"))
+			else if(Matches(strArg, "--output", "-o"))
 			{
 				options.OutputFilePath = Next() ?? options.OutputFilePath;
 			}
-			else if(Matches(arg, "--columns", "-c"))
+			else if(Matches(strArg, "--columns", "-c"))
 			{
 				options.KeyColumns = SplitList(Next());
 			}
-			else if(Matches(arg, "--compare-columns"))
+			else if(Matches(strArg, "--compare-columns"))
 			{
 				options.CompareColumns = SplitList(Next());
 			}
-			else if(Matches(arg, "--ignore-case"))
+			else if(Matches(strArg, "--ignore-case"))
 			{
 				options.IgnoreCase = ParseBool(Next());
 			}
-			else if(Matches(arg, "--trim"))
+			else if(Matches(strArg, "--trim"))
 			{
 				options.TrimValues = ParseBool(Next());
 			}
-			else if(Matches(arg, "--similar-match"))
+			else if(Matches(strArg, "--similar-match"))
 			{
 				options.SimilarMatch = ParseBool(Next());
 			}
-			else if(Matches(arg, "--similar-range", "--range"))
+			else if(Matches(strArg, "--similar-range", "--range"))
 			{
 				options.SimilarMatchRange = ParseDecimal(Next(), options.SimilarMatchRange);
 			}
-			else if(Matches(arg, "--delimiter", "-d"))
+			else if(Matches(strArg, "--delimiter", "-d"))
 			{
 				options.Delimiter = Next() ?? options.Delimiter;
 			}
-			else if(Matches(arg, "--split", "--split-index", "--split-indexes"))
+			else if(Matches(strArg, "--split", "--split-index", "--split-indexes"))
 			{
 				options.SplitIndexes = Next() ?? options.SplitIndexes;
 			}
-			else if(Matches(arg, "--no-header"))
+			else if(Matches(strArg, "--no-header"))
 			{
 				options.NoHeaderRow = ParseBool(Next());
 			}
-			else if(Matches(arg, "--encoding", "-e"))
+			else if(Matches(strArg, "--encoding", "-e"))
 			{
 				options.Encoding = Next() ?? options.Encoding;
 			}
-			else if(Matches(arg, "--config"))
+			else if(Matches(strArg, "--config"))
 			{
 				Next();
 			}
-			else if(Matches(arg, "--run", "--compare"))
+			else if(Matches(strArg, "--run", "--compare"))
 			{
 			}
-			else if(arg.StartsWith('-'))
+			else if(strArg.StartsWith('-'))
 			{
-				throw new ArgumentException($"Unknown option '{arg}'. See Help > Command line for the supported options.");
+				throw new ArgumentException($"Unknown option '{strArg}'. See Help > Command line for the supported options.");
 			}
 		}
 	}
 	#endregion
 
 	#region Private methods
-	private static bool Matches(string arg, params string[] names)
+	private static bool Matches(string strArg, params string[] names)
 	{
-		return names.Any(n => string.Equals(arg, n, StringComparison.OrdinalIgnoreCase));
+		return names.Any(n => string.Equals(strArg, n, StringComparison.OrdinalIgnoreCase));
 	}
 
 	private static List<string> SplitList(string? value)

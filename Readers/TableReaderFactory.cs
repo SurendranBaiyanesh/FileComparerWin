@@ -8,7 +8,7 @@ public sealed class TableReaderFactory
 {
 	#region Constants
 	/// <summary>Every extension a reader claims, as an Open dialog filter.</summary>
-	public const string FileDialogFilter =
+	public const string FILE_DIALOG_FILTER =
 		"Data files|*.csv;*.txt;*.tsv;*.psv;*.dat;*.text;*.xml;*.json;*.xlsx;*.xlsm|" +
 		"Delimited text (*.csv;*.txt;*.tsv;*.psv)|*.csv;*.txt;*.tsv;*.psv;*.dat;*.text|" +
 		"XML (*.xml)|*.xml|" +

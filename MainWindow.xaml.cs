@@ -12,10 +12,10 @@ namespace FileComparerWindows;
 public partial class MainWindow : Window, IUserInteraction
 {
     #region Constants
-    private const uint WmCopyGlobalData = 0x0049;
-    private const uint WmCopyData = 0x004A;
-    private const uint WmDropFiles = 0x0233;
-    private const uint MsgfltAllow = 1;
+    private const uint WM_COPY_GLOBAL_DATA = 0x0049;
+    private const uint WM_COPY_DATA = 0x004A;
+    private const uint WM_DROP_FILES = 0x0233;
+    private const uint MSGFLT_ALLOW = 1;
     #endregion
 
     #region Fields
@@ -126,8 +126,8 @@ public partial class MainWindow : Window, IUserInteraction
         base.OnSourceInitialized(e);
 
         IntPtr handle = new WindowInteropHelper(this).Handle;
-        foreach (uint message in (uint[])[WmDropFiles, WmCopyData, WmCopyGlobalData])
-            ChangeWindowMessageFilterEx(handle, message, MsgfltAllow, IntPtr.Zero);
+        foreach (uint message in (uint[])[WM_DROP_FILES, WM_COPY_DATA, WM_COPY_GLOBAL_DATA])
+            ChangeWindowMessageFilterEx(handle, message, MSGFLT_ALLOW, IntPtr.Zero);
     }
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -195,14 +195,14 @@ public partial class MainWindow : Window, IUserInteraction
     /// <summary>A drop onto one of the boxes: that box was aimed at, so that box takes the file.</summary>
     private void OnFileDrop(object sender, DragEventArgs e)
     {
-        string[] files = DroppedFiles(e);
-        if (files.Length == 0)
+        string[] liFiles = DroppedFiles(e);
+        if (liFiles.Length == 0)
             return;
 
-        if (files.Length > 1)
-            LoadPair(files);
+        if (liFiles.Length > 1)
+            LoadPair(liFiles);
         else if (sender is FrameworkElement { DataContext: LoadedFile box })
-            box.Path = files[0];
+            box.Path = liFiles[0];
         else
             return;
 
@@ -216,16 +216,16 @@ public partial class MainWindow : Window, IUserInteraction
     /// </summary>
     private void OnCardDrop(object sender, DragEventArgs e)
     {
-        string[] files = DroppedFiles(e);
-        if (files.Length == 0)
+        string[] liFiles = DroppedFiles(e);
+        if (liFiles.Length == 0)
             return;
 
-        if (files.Length > 1)
-            LoadPair(files);
+        if (liFiles.Length > 1)
+            LoadPair(liFiles);
         else if (_viewModel.Input.Path.Length > 0 && _viewModel.Output.Path.Length == 0)
-            _viewModel.Output.Path = files[0];
+            _viewModel.Output.Path = liFiles[0];
         else
-            _viewModel.Input.Path = files[0];
+            _viewModel.Input.Path = liFiles[0];
 
         e.Handled = true;
     }
@@ -235,10 +235,10 @@ public partial class MainWindow : Window, IUserInteraction
     /// taken in the order they were handed over - which is the order they were shown in, so the two
     /// boxes can be filled the other way round by dropping them one at a time.
     /// </summary>
-    private void LoadPair(string[] files)
+    private void LoadPair(string[] liFiles)
     {
-        _viewModel.Input.Path = files[0];
-        _viewModel.Output.Path = files[1];
+        _viewModel.Input.Path = liFiles[0];
+        _viewModel.Output.Path = liFiles[1];
     }
 
     /// <summary>
@@ -272,8 +272,8 @@ public partial class MainWindow : Window, IUserInteraction
 
         try
         {
-            string? directory = Path.GetDirectoryName(path);
-            return directory is not null && Directory.Exists(directory) ? directory : string.Empty;
+            string? strDirectory = Path.GetDirectoryName(path);
+            return strDirectory is not null && Directory.Exists(strDirectory) ? strDirectory : string.Empty;
         }
         catch (ArgumentException)
         {

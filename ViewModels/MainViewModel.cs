@@ -14,18 +14,18 @@ namespace FileComparerWindows.ViewModels;
 public sealed class MainViewModel : ObservableObject
 {
 	#region Constants
-	private const int ExitMatch = 0;
-	private const int ExitDifferences = 1;
-	private const int ExitError = 2;
+	private const int EXIT_MATCH = 0;
+	private const int EXIT_DIFFERENCES = 1;
+	private const int EXIT_ERROR = 2;
 
 	/// <summary>
 	/// Stands in for the empty string in the encoding and delimiter lists. An empty entry at the top of
 	/// a list reads as a fault rather than as a choice, so the default is spelt out and mapped back.
 	/// </summary>
-	private const string DetectLabel = "detect";
+	private const string DETECT_LABEL = "detect";
 
 	/// <summary>How much of a first value the column picker shows before cutting it short.</summary>
-	private const int SampleLength = 40;
+	private const int SAMPLE_LENGTH = 40;
 	#endregion
 
 	#region Fields
@@ -164,29 +164,29 @@ public sealed class MainViewModel : ObservableObject
 	/// as a fault rather than as a choice, so the default is spelt out and mapped back to the empty
 	/// string the readers expect.
 	/// </summary>
-	public IReadOnlyList<string> EncodingChoices { get; } = [DetectLabel, .. TextFile.SupportedEncodings];
+	public IReadOnlyList<string> EncodingChoices { get; } = [DETECT_LABEL, .. TextFile.SupportedEncodings];
 
 	/// <summary>
 	/// The box is editable, so any separator can be typed; these are the ones worth not typing. |" is
 	/// offered but never detected - in a header line it cannot be told apart from a plain pipe.
 	/// </summary>
 	public IReadOnlyList<string> DelimiterChoices { get; } =
-		[DetectLabel, ";", ",", "\\t", "|", "|\"", ComparisonOptions.DynamicDelimiter];
+		[DETECT_LABEL, ";", ",", "\\t", "|", "|\"", ComparisonOptions.DYNAMIC_DELIMITER];
 
 	public string SelectedEncoding
 	{
-		get => _encoding.Length == 0 ? DetectLabel : _encoding;
+		get => _encoding.Length == 0 ? DETECT_LABEL : _encoding;
 		set => this.Encoding = IsDetect(value) ? string.Empty : value;
 	}
 
 	public string SelectedDelimiter
 	{
-		get => _delimiter.Length == 0 ? DetectLabel : _delimiter;
+		get => _delimiter.Length == 0 ? DETECT_LABEL : _delimiter;
 		set => this.Delimiter = IsDetect(value) ? string.Empty : value;
 	}
 
 	/// <summary>The exit code the process reports when the window closes, mirroring the console tool.</summary>
-	public int ExitCode { get; private set; } = ExitMatch;
+	public int ExitCode { get; private set; } = EXIT_MATCH;
 
 	public string KeyColumns
 	{
@@ -262,7 +262,7 @@ public sealed class MainViewModel : ObservableObject
 	/// under. The Split at box is disabled otherwise, so that positions cannot be filled in where they
 	/// would quietly do nothing.
 	/// </summary>
-	public bool IsDynamicDelimiter => string.Equals(_delimiter.Trim(), ComparisonOptions.DynamicDelimiter, StringComparison.OrdinalIgnoreCase);
+	public bool IsDynamicDelimiter => string.Equals(_delimiter.Trim(), ComparisonOptions.DYNAMIC_DELIMITER, StringComparison.OrdinalIgnoreCase);
 
 	/// <summary>
 	/// Treats the first line or row of both files as a record rather than as column names, naming the
@@ -500,7 +500,7 @@ public sealed class MainViewModel : ObservableObject
 		catch(Exception exception)
 		{
 			this.ErrorMessage = exception.Message;
-			this.ExitCode = ExitError;
+			this.ExitCode = EXIT_ERROR;
 		}
 	}
 
@@ -546,15 +546,15 @@ public sealed class MainViewModel : ObservableObject
 				return;
 			}
 
-			IReadOnlyList<string> columns = this.Input.Columns.Count > 0 ? this.Input.Columns : this.Output.Columns;
-			if(columns.Count == 0)
+			IReadOnlyList<string> liColumns = this.Input.Columns.Count > 0 ? this.Input.Columns : this.Output.Columns;
+			if(liColumns.Count == 0)
 			{
 				this.StatusText = "Nothing to split - choose the files first.";
 				return;
 			}
 
-			this.CompareColumns = string.Join(", ", columns);
-			this.StatusText = $"Split into {columns.Count} column(s): {columns[0]} to {columns[^1]}. Name a key column, then Compare.";
+			this.CompareColumns = string.Join(", ", liColumns);
+			this.StatusText = $"Split into {liColumns.Count} column(s): {liColumns[0]} to {liColumns[^1]}. Name a key column, then Compare.";
 		}
 		catch(Exception exception)
 		{
@@ -591,7 +591,7 @@ public sealed class MainViewModel : ObservableObject
 	#region Private methods
 	private static bool IsDetect(string? value)
 	{
-		return string.IsNullOrWhiteSpace(value) || string.Equals(value.Trim(), DetectLabel, StringComparison.OrdinalIgnoreCase);
+		return string.IsNullOrWhiteSpace(value) || string.Equals(value.Trim(), DETECT_LABEL, StringComparison.OrdinalIgnoreCase);
 	}
 
 	// ---------------------------------------------------------------- reading the files
@@ -648,9 +648,9 @@ public sealed class MainViewModel : ObservableObject
 			ComparisonResult result = await Task.Run(() => new FileComparisonEngine(options).Compare(input, output));
 			_result = result;
 			_resultOptions = options;
-			(IReadOnlyList<DifferenceRow> differences, IReadOnlyList<SingleSideRow> missing, IReadOnlyList<SingleSideRow> extra, string report) = await Task.Run(() => Project(result, options));
+			(IReadOnlyList<DifferenceRow> liDifferences, IReadOnlyList<SingleSideRow> liMissing, IReadOnlyList<SingleSideRow> liExtra, string report) = await Task.Run(() => Project(result, options));
 
-			SetRows(differences, missing, extra);
+			SetRows(liDifferences, liMissing, liExtra);
 			this.Warnings = TextReport.CollectWarnings(result);
 			this.ReportText = report;
 
@@ -668,7 +668,7 @@ public sealed class MainViewModel : ObservableObject
 			this.VerdictDetail = result.IsMatch ? $"All {result.MatchedRowCount:N0} row(s) match." : $"{result.NonMatchingRowCount:N0} non-matching row(s).";
 
 			this.HasResult = true;
-			this.ExitCode = result.IsMatch ? ExitMatch : ExitDifferences;
+			this.ExitCode = result.IsMatch ? EXIT_MATCH : EXIT_DIFFERENCES;
 			this.StatusText = $"Compared at {DateTime.Now:HH:mm:ss}.";
 			this.ExportDifferencesCommand.RaiseCanExecuteChanged();
 			this.ExportExcelReportCommand.RaiseCanExecuteChanged();
@@ -680,7 +680,7 @@ public sealed class MainViewModel : ObservableObject
 			this.Verdict = VerdictKind.Error;
 			this.VerdictHeadline = "ERROR";
 			this.VerdictDetail = exception.Message;
-			this.ExitCode = ExitError;
+			this.ExitCode = EXIT_ERROR;
 			this.StatusText = "The comparison could not be run.";
 		}
 		finally
@@ -696,23 +696,23 @@ public sealed class MainViewModel : ObservableObject
 	private static (IReadOnlyList<DifferenceRow>, IReadOnlyList<SingleSideRow>, IReadOnlyList<SingleSideRow>, string) Project(
 		ComparisonResult result, ComparisonOptions options)
 	{
-		List<DifferenceRow> differences = [];
+		List<DifferenceRow> liDifferences = [];
 		foreach(RowMismatch mismatch in result.ValueMismatches)
 		{
-			string inputRowText = mismatch.InputRow.ToDisplayString();
-			string outputRowText = mismatch.OutputRow.ToDisplayString();
+			string strInputRowText = mismatch.InputRow.ToDisplayString();
+			string strOutputRowText = mismatch.OutputRow.ToDisplayString();
 
 			foreach(ValueDifference difference in mismatch.Differences)
 			{
-				differences.Add(new DifferenceRow(mismatch.DisplayKey, difference.Column, difference.InputValue, difference.OutputValue, mismatch.InputRow.LineNumber, mismatch.OutputRow.LineNumber, inputRowText, outputRowText));
+				liDifferences.Add(new DifferenceRow(mismatch.DisplayKey, difference.Column, difference.InputValue, difference.OutputValue, mismatch.InputRow.LineNumber, mismatch.OutputRow.LineNumber, strInputRowText, strOutputRowText));
 			}
 		}
 
-		List<SingleSideRow> missing = [.. result.MissingInOutput.Select(r => new SingleSideRow(r.DisplayKey, r.Row.LineNumber, r.Row.ToDisplayString()))];
+		List<SingleSideRow> liMissing = [.. result.MissingInOutput.Select(r => new SingleSideRow(r.DisplayKey, r.Row.LineNumber, r.Row.ToDisplayString()))];
 
-		List<SingleSideRow> extra = [.. result.ExtraInOutput.Select(r => new SingleSideRow(r.DisplayKey, r.Row.LineNumber, r.Row.ToDisplayString()))];
+		List<SingleSideRow> liExtra = [.. result.ExtraInOutput.Select(r => new SingleSideRow(r.DisplayKey, r.Row.LineNumber, r.Row.ToDisplayString()))];
 
-		return (differences, missing, extra, TextReport.Build(result, options));
+		return (liDifferences, liMissing, liExtra, TextReport.Build(result, options));
 	}
 
 	/// <summary>
@@ -730,15 +730,15 @@ public sealed class MainViewModel : ObservableObject
 	/// filters themselves are left as they are: a filter typed to chase one column through a comparison
 	/// is usually still the filter wanted when that comparison is run again.
 	/// </summary>
-	private void SetRows(IReadOnlyList<DifferenceRow> differences, IReadOnlyList<SingleSideRow> missing, IReadOnlyList<SingleSideRow> extra)
+	private void SetRows(IReadOnlyList<DifferenceRow> liDifferences, IReadOnlyList<SingleSideRow> liMissing, IReadOnlyList<SingleSideRow> liExtra)
 	{
-		this.Differences = differences;
-		this.MissingRows = missing;
-		this.ExtraRows = extra;
+		this.Differences = liDifferences;
+		this.MissingRows = liMissing;
+		this.ExtraRows = liExtra;
 
-		this.DifferencesView = CreateView(differences, row => this.DifferenceFilters.Matches((DifferenceRow) row));
-		this.MissingRowsView = CreateView(missing, row => this.MissingFilters.Matches((SingleSideRow) row));
-		this.ExtraRowsView = CreateView(extra, row => this.ExtraFilters.Matches((SingleSideRow) row));
+		this.DifferencesView = CreateView(liDifferences, row => this.DifferenceFilters.Matches((DifferenceRow) row));
+		this.MissingRowsView = CreateView(liMissing, row => this.MissingFilters.Matches((SingleSideRow) row));
+		this.ExtraRowsView = CreateView(liExtra, row => this.ExtraFilters.Matches((SingleSideRow) row));
 
 		OnDifferenceFiltersChanged();
 		OnMissingFiltersChanged();
@@ -776,14 +776,14 @@ public sealed class MainViewModel : ObservableObject
 	/// </summary>
 	private static string DescribeFiltering(ICollectionView? view, int total)
 	{
-		int shown = view switch
+		int nShown = view switch
 		{
 			CollectionView collection => collection.Count,
 			null => total,
 			_ => view.Cast<object>().Count()
 		};
 
-		return $"Showing {shown:N0} of {total:N0} row(s)";
+		return $"Showing {nShown:N0} of {total:N0} row(s)";
 	}
 
 	private void ClearResults()
@@ -838,8 +838,8 @@ public sealed class MainViewModel : ObservableObject
 
 	private void Browse(LoadedFile file)
 	{
-		string? chosen = _interaction.BrowseForOpen($"Choose the {file.Label.ToLowerInvariant()} file", TableReaderFactory.FileDialogFilter, file.Path);
-		if(chosen is not null) file.Path = chosen;
+		string? strChosen = _interaction.BrowseForOpen($"Choose the {file.Label.ToLowerInvariant()} file", TableReaderFactory.FILE_DIALOG_FILTER, file.Path);
+		if(strChosen is not null) file.Path = strChosen;
 	}
 
 	private void SwapFiles()
@@ -859,8 +859,8 @@ public sealed class MainViewModel : ObservableObject
 	/// </summary>
 	private void PickSplitIndexes()
 	{
-		string path = FirstReadablePath();
-		if(path.Length == 0)
+		string strPath = FirstReadablePath();
+		if(strPath.Length == 0)
 		{
 			this.ErrorMessage = "Choose an input or output file first - the picker marks up a row from it.";
 			return;
@@ -869,29 +869,29 @@ public sealed class MainViewModel : ObservableObject
 		string firstRow;
 		try
 		{
-			firstRow = TextFile.Read(path, this.Encoding).Lines().FirstOrDefault(l => l.Length > 0) ?? string.Empty;
+			firstRow = TextFile.Read(strPath, this.Encoding).Lines().FirstOrDefault(l => l.Length > 0) ?? string.Empty;
 		}
 		catch(Exception exception)
 		{
-			this.ErrorMessage = $"Could not read '{path}': {exception.Message}";
+			this.ErrorMessage = $"Could not read '{strPath}': {exception.Message}";
 			return;
 		}
 
 		if(firstRow.Length == 0)
 		{
-			this.ErrorMessage = $"'{Path.GetFileName(path)}' has no rows to mark up.";
+			this.ErrorMessage = $"'{Path.GetFileName(strPath)}' has no rows to mark up.";
 			return;
 		}
 
-		string? positions = _interaction.PickSplitPositions("Pick split index",
-		                                                    $"The first row of {Path.GetFileName(path)}. Type the separator wherever a column should end - " +
+		string? strPositions = _interaction.PickSplitPositions("Pick split index",
+		                                                    $"The first row of {Path.GetFileName(strPath)}. Type the separator wherever a column should end - " +
 		                                                    "the separators are counted and thrown away, and what is left is the row cut at those positions.",
 		                                                    firstRow, this.SplitIndexes);
 
-		if(positions is null) return;
+		if(strPositions is null) return;
 
-		this.SplitIndexes = positions;
-		this.StatusText = positions.Length == 0 ? "No split positions chosen." : $"Split positions: {positions}";
+		this.SplitIndexes = strPositions;
+		this.StatusText = strPositions.Length == 0 ? "No split positions chosen." : $"Split positions: {strPositions}";
 	}
 
 	/// <summary>
@@ -900,9 +900,9 @@ public sealed class MainViewModel : ObservableObject
 	/// </summary>
 	private string FirstReadablePath()
 	{
-		foreach(string path in (string[]) [this.Input.Path, this.Output.Path])
+		foreach(string strPath in (string[]) [this.Input.Path, this.Output.Path])
 		{
-			if(path.Trim().Length > 0 && File.Exists(path) && !XlsxTableReader.IsWorkbook(path)) return path;
+			if(strPath.Trim().Length > 0 && File.Exists(strPath) && !XlsxTableReader.IsWorkbook(strPath)) return strPath;
 		}
 
 		return string.Empty;
@@ -910,15 +910,15 @@ public sealed class MainViewModel : ObservableObject
 
 	private void PickColumns(string title, string prompt, string current, Action<string> assign)
 	{
-		List<ColumnChoice> choices = BuildColumnChoices(current);
-		if(choices.Count == 0)
+		List<ColumnChoice> liChoices = BuildColumnChoices(current);
+		if(liChoices.Count == 0)
 		{
 			_interaction.ShowMessage(title, "Choose the files first - the columns are read from their headers.");
 			return;
 		}
 
-		IReadOnlyList<string>? picked = _interaction.PickColumns(title, prompt, choices);
-		if(picked is not null) assign(string.Join(", ", picked));
+		IReadOnlyList<string>? liPicked = _interaction.PickColumns(title, prompt, liChoices);
+		if(liPicked is not null) assign(string.Join(", ", liPicked));
 	}
 
 	/// <summary>
@@ -928,10 +928,10 @@ public sealed class MainViewModel : ObservableObject
 	/// </summary>
 	private string FirstValue(string column)
 	{
-		string value = Value(this.Input, column, this.NoHeaderRow);
-		if(value.Length == 0) value = Value(this.Output, column, this.NoHeaderRow);
+		string strValue = Value(this.Input, column, this.NoHeaderRow);
+		if(strValue.Length == 0) strValue = Value(this.Output, column, this.NoHeaderRow);
 
-		return value.Length <= SampleLength ? value : value[..SampleLength] + "…";
+		return strValue.Length <= SAMPLE_LENGTH ? strValue : strValue[..SAMPLE_LENGTH] + "…";
 	}
 
 	static string Value(LoadedFile file, string column, bool bWithHeader)
@@ -944,62 +944,62 @@ public sealed class MainViewModel : ObservableObject
 	private List<ColumnChoice> BuildColumnChoices(string current)
 	{
 		HashSet<string> selected = new(SplitList(current).Select(TextKey.Canonical), StringComparer.OrdinalIgnoreCase);
-		List<ColumnChoice> choices = [];
+		List<ColumnChoice> liChoices = [];
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
 
-		foreach(string name in this.Input.Columns.Concat(this.Output.Columns))
+		foreach(string strName in this.Input.Columns.Concat(this.Output.Columns))
 		{
-			if(!seen.Add(TextKey.Canonical(name))) continue;
+			if(!seen.Add(TextKey.Canonical(strName))) continue;
 
-			bool inInput = this.Input.Table?.HasColumn(name) ?? false;
-			bool inOutput = this.Output.Table?.HasColumn(name) ?? false;
+			bool bInInput = this.Input.Table?.HasColumn(strName) ?? false;
+			bool bInOutput = this.Output.Table?.HasColumn(strName) ?? false;
 
-			choices.Add(new ColumnChoice
+			liChoices.Add(new ColumnChoice
 			            {
-				            Name = name,
-				            Availability = inInput && inOutput ? "both files" : inInput ? "input only" : "output only",
-				            Sample = FirstValue(name),
-				            IsSelected = selected.Contains(TextKey.Canonical(name))
+				            Name = strName,
+				            Availability = bInInput && bInOutput ? "both files" : bInInput ? "input only" : "output only",
+				            Sample = FirstValue(strName),
+				            IsSelected = selected.Contains(TextKey.Canonical(strName))
 			            });
 		}
 
 		// A name typed by hand that matches no header should not vanish when the picker is confirmed.
-		foreach(string name in SplitList(current).Where(n => seen.Add(TextKey.Canonical(n))))
+		foreach(string strName in SplitList(current).Where(n => seen.Add(TextKey.Canonical(n))))
 		{
-			choices.Add(new ColumnChoice { Name = name, Availability = "not in either file", IsSelected = true });
+			liChoices.Add(new ColumnChoice { Name = strName, Availability = "not in either file", IsSelected = true });
 		}
 
 		// The columns already chosen come first, in the order they are already in, and the rest of the
 		// headers follow. The picker hands its list back in the order it ends up in, so opening it on a
 		// list in file order would quietly undo an arrangement the moment it was confirmed.
-		Dictionary<string, ColumnChoice> byName = choices.ToDictionary(c => TextKey.Canonical(c.Name), StringComparer.OrdinalIgnoreCase);
-		List<ColumnChoice> ordered = [];
+		Dictionary<string, ColumnChoice> byName = liChoices.ToDictionary(c => TextKey.Canonical(c.Name), StringComparer.OrdinalIgnoreCase);
+		List<ColumnChoice> liOrdered = [];
 		HashSet<ColumnChoice> placed = [];
 
-		foreach(string name in SplitList(current))
+		foreach(string strName in SplitList(current))
 		{
-			if(byName.TryGetValue(TextKey.Canonical(name), out ColumnChoice? chosen) && placed.Add(chosen)) ordered.Add(chosen);
+			if(byName.TryGetValue(TextKey.Canonical(strName), out ColumnChoice? strChosen) && placed.Add(strChosen)) liOrdered.Add(strChosen);
 		}
 
-		ordered.AddRange(choices.Where(c => !placed.Contains(c)));
-		return ordered;
+		liOrdered.AddRange(liChoices.Where(c => !placed.Contains(c)));
+		return liOrdered;
 	}
 
 	private void LoadSettings()
 	{
-		string? path = _interaction.BrowseForOpen("Load settings", "Settings (*.json)|*.json|All files (*.*)|*.*", _settingsPath);
-		if(path is null) return;
+		string? strPath = _interaction.BrowseForOpen("Load settings", "Settings (*.json)|*.json|All files (*.*)|*.*", _settingsPath);
+		if(strPath is null) return;
 
 		try
 		{
-			ApplyOptions(ComparisonOptions.LoadFromFile(path));
-			_settingsPath = path;
+			ApplyOptions(ComparisonOptions.LoadFromFile(strPath));
+			_settingsPath = strPath;
 			ClearResults();
-			this.StatusText = $"Settings loaded from {path}";
+			this.StatusText = $"Settings loaded from {strPath}";
 		}
 		catch(Exception exception)
 		{
-			this.ErrorMessage = $"Could not read '{path}': {exception.Message}";
+			this.ErrorMessage = $"Could not read '{strPath}': {exception.Message}";
 		}
 	}
 
@@ -1010,21 +1010,21 @@ public sealed class MainViewModel : ObservableObject
 
 	private void SaveSettingsAs()
 	{
-		string? path = _interaction.BrowseForSave("Save settings", "Settings (*.json)|*.json|All files (*.*)|*.*", "appsettings.json", _settingsPath);
-		if(path is not null) WriteSettings(path);
+		string? strPath = _interaction.BrowseForSave("Save settings", "Settings (*.json)|*.json|All files (*.*)|*.*", "appsettings.json", _settingsPath);
+		if(strPath is not null) WriteSettings(strPath);
 	}
 
-	private void WriteSettings(string path)
+	private void WriteSettings(string strPath)
 	{
 		try
 		{
-			BuildOptions().SaveToFile(path);
-			_settingsPath = path;
-			this.StatusText = $"Settings saved to {path}";
+			BuildOptions().SaveToFile(strPath);
+			_settingsPath = strPath;
+			this.StatusText = $"Settings saved to {strPath}";
 		}
 		catch(Exception exception)
 		{
-			this.ErrorMessage = $"Could not save '{path}': {exception.Message}";
+			this.ErrorMessage = $"Could not save '{strPath}': {exception.Message}";
 		}
 	}
 
@@ -1044,34 +1044,34 @@ public sealed class MainViewModel : ObservableObject
 	{
 		if(_result is null || _resultOptions is null) return;
 
-		string? path = _interaction.BrowseForSave("Export report as Excel", "Excel workbook (*.xlsx)|*.xlsx|All files (*.*)|*.*", SuggestExportName("xlsx"), null);
+		string? strPath = _interaction.BrowseForSave("Export report as Excel", "Excel workbook (*.xlsx)|*.xlsx|All files (*.*)|*.*", SuggestExportName("xlsx"), null);
 
-		if(path is null) return;
+		if(strPath is null) return;
 
 		try
 		{
-			XlsxReport.Write(path, _result, _resultOptions);
-			this.StatusText = $"Report written to {path}";
+			XlsxReport.Write(strPath, _result, _resultOptions);
+			this.StatusText = $"Report written to {strPath}";
 		}
 		catch(Exception exception)
 		{
-			this.ErrorMessage = $"Could not write '{path}': {exception.Message}";
+			this.ErrorMessage = $"Could not write '{strPath}': {exception.Message}";
 		}
 	}
 
 	private void ExportReport()
 	{
-		string? path = _interaction.BrowseForSave("Export report", "Text file (*.txt)|*.txt|All files (*.*)|*.*", SuggestExportName("txt"), null);
-		if(path is null) return;
+		string? strPath = _interaction.BrowseForSave("Export report", "Text file (*.txt)|*.txt|All files (*.*)|*.*", SuggestExportName("txt"), null);
+		if(strPath is null) return;
 
 		try
 		{
-			File.WriteAllText(path, this.ReportText, new System.Text.UTF8Encoding(true));
-			this.StatusText = $"Report written to {path}";
+			File.WriteAllText(strPath, this.ReportText, new System.Text.UTF8Encoding(true));
+			this.StatusText = $"Report written to {strPath}";
 		}
 		catch(Exception exception)
 		{
-			this.ErrorMessage = $"Could not write '{path}': {exception.Message}";
+			this.ErrorMessage = $"Could not write '{strPath}': {exception.Message}";
 		}
 	}
 
@@ -1082,8 +1082,8 @@ public sealed class MainViewModel : ObservableObject
 	/// </summary>
 	private void ExportDifferences()
 	{
-		string? path = _interaction.BrowseForSave("Export differences", "CSV file (*.csv)|*.csv|All files (*.*)|*.*", SuggestExportName("csv"), null);
-		if(path is null) return;
+		string? strPath = _interaction.BrowseForSave("Export differences", "CSV file (*.csv)|*.csv|All files (*.*)|*.*", SuggestExportName("csv"), null);
+		if(strPath is null) return;
 
 		try
 		{
@@ -1105,12 +1105,12 @@ public sealed class MainViewModel : ObservableObject
 				csv.AppendLine(string.Join(';', Quote("Extra in output"), Quote(row.Key), Quote(string.Empty), Quote(string.Empty), Quote(row.RowText), string.Empty, row.LineNumber));
 			}
 
-			File.WriteAllText(path, csv.ToString(), new System.Text.UTF8Encoding(true));
-			this.StatusText = $"Differences written to {path}";
+			File.WriteAllText(strPath, csv.ToString(), new System.Text.UTF8Encoding(true));
+			this.StatusText = $"Differences written to {strPath}";
 		}
 		catch(Exception exception)
 		{
-			this.ErrorMessage = $"Could not write '{path}': {exception.Message}";
+			this.ErrorMessage = $"Could not write '{strPath}': {exception.Message}";
 		}
 	}
 
@@ -1121,8 +1121,8 @@ public sealed class MainViewModel : ObservableObject
 
 	private string SuggestExportName(string extension)
 	{
-		string name = this.Input.Path.Length > 0 ? Path.GetFileNameWithoutExtension(this.Input.Path) : "comparison";
-		return $"{name}-comparison-{DateTime.Now:yyyyMMdd-HHmm}.{extension}";
+		string strName = this.Input.Path.Length > 0 ? Path.GetFileNameWithoutExtension(this.Input.Path) : "comparison";
+		return $"{strName}-comparison-{DateTime.Now:yyyyMMdd-HHmm}.{extension}";
 	}
 
 	private void ShowAbout()
@@ -1131,18 +1131,18 @@ public sealed class MainViewModel : ObservableObject
 		                      """
 		                      FileComparerWindows
 
-		                      Compares an input file and an output file row by row, using one or more columns as the key.
+		                      Compares an input file and an output file row by row, using one or more liColumns as the key.
 		                      Row order does not matter - rows are paired by their key values and then every other shared
 		                      column is compared.
 
 		                      Formats
 		                        Delimited text  .csv .txt .tsv .psv .dat   delimiter detected from the header, RFC 4180 quoting
-		                        XML             .xml                       one element per record, attributes and leaf children as columns
+		                        XML             .xml                       one element per record, attributes and leaf children as liColumns
 		                        JSON            .json                      an array of objects, or the first array property of an object
 		                        Excel           .xlsx .xlsm                read straight from the Open XML package, first row is the header
 
-		                      The two files need not share a format or an encoding, and columns are matched by name rather
-		                      than position. They must carry the same columns, though: a column on one side only stops the
+		                      The two files need not share a format or an encoding, and liColumns are matched by strName rather
+		                      than position. They must carry the same liColumns, though: a column on one side only stops the
 		                      comparison as an error rather than being left out of it.
 
 		                      Encoding is detected from a byte order mark, else UTF-8, else Windows-1252, and text is

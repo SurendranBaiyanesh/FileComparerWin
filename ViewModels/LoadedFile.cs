@@ -14,7 +14,7 @@ namespace FileComparerWindows.ViewModels;
 public sealed class LoadedFile(string label) : ObservableObject
 {
 	#region Fields
-	private static readonly TableReaderFactory Factory = new();
+	private static readonly TableReaderFactory FACTORY = new();
 
 	private string _path = string.Empty;
 	private string _description = "No file chosen.";
@@ -99,19 +99,19 @@ public sealed class LoadedFile(string label) : ObservableObject
 			return;
 		}
 
-		string signature = BuildSignature(options);
-		if(this.Table is not null && signature == _signature) return;
+		string strSignature = BuildSignature(options);
+		if(this.Table is not null && strSignature == _signature) return;
 
 		this.Description = "Reading…";
 		this.HasError = false;
 
 		try
 		{
-			string path = _path;
-			DataTable table = await Task.Run(() => Factory.Load(path, options));
+			string strPath = _path;
+			DataTable table = await Task.Run(() => FACTORY.Load(strPath, options));
 
 			this.Table = table;
-			_signature = signature;
+			_signature = strSignature;
 			this.Description = $"{table.FormatName} · {table.Rows.Count:N0} row(s) · {table.Columns.Count} column(s)";
 		}
 		catch(Exception exception)
@@ -136,12 +136,12 @@ public sealed class LoadedFile(string label) : ObservableObject
 	private string BuildSignature(ComparisonOptions options)
 	{
 		// Only the settings that change how the file is read belong here.
-		string stamp = File.Exists(_path) ? File.GetLastWriteTimeUtc(_path).Ticks.ToString() + ":" + new FileInfo(_path).Length : "missing";
+		string strStamp = File.Exists(_path) ? File.GetLastWriteTimeUtc(_path).Ticks.ToString() + ":" + new FileInfo(_path).Length : "missing";
 
 		// The split positions belong here as much as the delimiter does: without them a file already
 		// read would be handed back unchanged when the positions were altered, and Convert would look
 		// as though it had done nothing.
-		return string.Join('|', _path, stamp, options.Encoding, options.Delimiter, options.SplitIndexes, options.NoHeaderRow);
+		return string.Join('|', _path, strStamp, options.Encoding, options.Delimiter, options.SplitIndexes, options.NoHeaderRow);
 	}
 	#endregion
 }

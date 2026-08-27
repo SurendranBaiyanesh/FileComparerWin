@@ -6,10 +6,12 @@ namespace FileComparerWindows.Model;
 /// <summary>A file's contents together with the encoding they turned out to be written in.</summary>
 public sealed record TextContent(string Text, string EncodingName)
 {
+	#region Public methods
 	public string[] Lines()
 	{
 		return this.Text.Split(["\r\n", "\n", "\r"], StringSplitOptions.None);
 	}
+	#endregion
 }
 
 /// <summary>
@@ -22,8 +24,8 @@ public sealed record TextContent(string Text, string EncodingName)
 public static class TextFile
 {
 	#region Fields
-	private static readonly UTF8Encoding StrictUtf8 = new(false, true);
-	private static readonly Encoding BigEndianUtf32 = new UTF32Encoding(true, true);
+	private static readonly UTF8Encoding STRICT_UTF8 = new(false, true);
+	private static readonly Encoding BIG_ENDIAN_UTF32 = new UTF32Encoding(true, true);
 
 	/// <summary>
 	/// Windows-1252 is Latin-1 except across 0x80-0x9F, which hold the euro sign and the typographic
@@ -31,7 +33,7 @@ public static class TextFile
 	/// Code points rather than the characters themselves, so that re-saving this file in another
 	/// encoding cannot quietly corrupt the very table that repairs mis-encoded input.
 	/// </summary>
-	private static readonly char[] Windows1252Upper =
+	private static readonly char[] WINDOWS1252_UPPER =
 	[
 		(char) 0x20AC, (char) 0x0081, (char) 0x201A, (char) 0x0192, (char) 0x201E, (char) 0x2026, (char) 0x2020, (char) 0x2021,
 		(char) 0x02C6, (char) 0x2030, (char) 0x0160, (char) 0x2039, (char) 0x0152, (char) 0x008D, (char) 0x017D, (char) 0x008F,
@@ -49,59 +51,59 @@ public static class TextFile
 	/// <param name="requestedEncoding">Forces an encoding; empty detects one.</param>
 	public static TextContent Read(string path, string requestedEncoding = "")
 	{
-		byte[] bytes = File.ReadAllBytes(path);
+		byte[] liBytes = File.ReadAllBytes(path);
 
 		if(!string.IsNullOrWhiteSpace(requestedEncoding))
 		{
-			if(IsWindows1252(requestedEncoding)) return new TextContent(DecodeWindows1252(bytes), "Windows-1252");
+			if(IsWindows1252(requestedEncoding)) return new TextContent(DecodeWindows1252(liBytes), "Windows-1252");
 
 			Encoding requested = Resolve(requestedEncoding);
-			return new TextContent(Decode(bytes, requested), Describe(requested));
+			return new TextContent(Decode(liBytes, requested), Describe(requested));
 		}
 
-		Encoding? declared = DetectByteOrderMark(bytes);
-		if(declared is not null) return new TextContent(Decode(bytes, declared), Describe(declared));
+		Encoding? declared = DetectByteOrderMark(liBytes);
+		if(declared is not null) return new TextContent(Decode(liBytes, declared), Describe(declared));
 
 		try
 		{
-			return new TextContent(StrictUtf8.GetString(bytes), "UTF-8");
+			return new TextContent(STRICT_UTF8.GetString(liBytes), "UTF-8");
 		}
 		catch(DecoderFallbackException)
 		{
 			// Byte sequences no UTF-8 encoder would ever produce, so the file is single-byte: read it as such.
-			return new TextContent(DecodeWindows1252(bytes), "Windows-1252");
+			return new TextContent(DecodeWindows1252(liBytes), "Windows-1252");
 		}
 	}
 	#endregion
 
 	#region Private methods
-	private static Encoding? DetectByteOrderMark(byte[] bytes)
+	private static Encoding? DetectByteOrderMark(byte[] liBytes)
 	{
-		return bytes switch
+		return liBytes switch
 		{
 			[0xEF, 0xBB, 0xBF, ..] => Encoding.UTF8,
 			[0xFF, 0xFE, 0x00, 0x00, ..] => Encoding.UTF32,
-			[0x00, 0x00, 0xFE, 0xFF, ..] => BigEndianUtf32,
+			[0x00, 0x00, 0xFE, 0xFF, ..] => BIG_ENDIAN_UTF32,
 			[0xFF, 0xFE, ..] => Encoding.Unicode,
 			[0xFE, 0xFF, ..] => Encoding.BigEndianUnicode,
 			_ => null
 		};
 	}
 
-	private static string Decode(byte[] bytes, Encoding encoding)
+	private static string Decode(byte[] liBytes, Encoding encoding)
 	{
-		byte[] preamble = encoding.GetPreamble();
-		int start = bytes.AsSpan().StartsWith(preamble) ? preamble.Length : 0;
+		byte[] liPreamble = encoding.GetPreamble();
+		int nStart = liBytes.AsSpan().StartsWith(liPreamble) ? liPreamble.Length : 0;
 
-		return encoding.GetString(bytes, start, bytes.Length - start);
+		return encoding.GetString(liBytes, nStart, liBytes.Length - nStart);
 	}
 
-	private static string DecodeWindows1252(byte[] bytes)
+	private static string DecodeWindows1252(byte[] liBytes)
 	{
-		char[] characters = new char[bytes.Length];
-		for(int i = 0; i < bytes.Length; i++) characters[i] = bytes[i] is >= 0x80 and <= 0x9F ? Windows1252Upper[bytes[i] - 0x80] : (char) bytes[i];
+		char[] liCharacters = new char[liBytes.Length];
+		for(int i = 0; i < liBytes.Length; i++) liCharacters[i] = liBytes[i] is >= 0x80 and <= 0x9F ? WINDOWS1252_UPPER[liBytes[i] - 0x80] : (char) liBytes[i];
 
-		return new string(characters);
+		return new string(liCharacters);
 	}
 
 	private static bool IsWindows1252(string name)

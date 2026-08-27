@@ -28,11 +28,11 @@ public partial class SplitIndexWindow : Window
         PromptText.Text = prompt;
         _originalRow = firstRow;
 
-        MarkerBox.Text = SplitPositions.DefaultMarker.ToString();
+        MarkerBox.Text = SplitPositions.DEFAULT_MARKER.ToString();
 
         // Opened on the positions already in the box, so a list can be adjusted rather than started
         // from nothing every time. This assignment raises TextChanged, which draws the preview.
-        RowBox.Text = SplitPositions.Mark(firstRow, SplitPositions.Parse(currentPositions), SplitPositions.DefaultMarker);
+        RowBox.Text = SplitPositions.Mark(firstRow, SplitPositions.Parse(currentPositions), SplitPositions.DEFAULT_MARKER);
 
         Loaded += (_, _) => RowBox.Focus();
     }
@@ -44,7 +44,7 @@ public partial class SplitIndexWindow : Window
     #endregion
 
     #region Private methods
-    private char Marker => MarkerBox.Text.Length > 0 ? MarkerBox.Text[0] : SplitPositions.DefaultMarker;
+    private char Marker => MarkerBox.Text.Length > 0 ? MarkerBox.Text[0] : SplitPositions.DEFAULT_MARKER;
 
     private void OnRowChanged(object sender, TextChangedEventArgs e) => Refresh();
 
@@ -63,25 +63,25 @@ public partial class SplitIndexWindow : Window
             return;
 
         char marker = Marker;
-        string marked = RowBox.Text;
-        string row = SplitPositions.Strip(marked, marker);
-        int[] positions = SplitPositions.FromMarkedLine(marked, marker);
+        string strMarked = RowBox.Text;
+        string strRow = SplitPositions.Strip(strMarked, marker);
+        int[] liPositions = SplitPositions.FromMarkedLine(strMarked, marker);
 
-        Positions = SplitPositions.Describe(positions);
-        PositionsText.Text = positions.Length == 0 ? "Split at: (nothing yet)" : $"Split at: {Positions}";
+        Positions = SplitPositions.Describe(liPositions);
+        PositionsText.Text = liPositions.Length == 0 ? "Split at: (nothing yet)" : $"Split at: {Positions}";
 
         MarkerWarning.Text = _originalRow.Contains(marker)
             ? $"The row contains '{marker}' itself, so it cannot mark the cuts. Choose another separator."
             : string.Empty;
 
-        List<string> values = SplitPositions.Split(row, positions);
-        PreviewGrid.ItemsSource = values
-            .Select((value, i) => new PreviewRow($"column{i + 1}", positions[i], value.Length, value))
+        List<string> liValues = SplitPositions.Split(strRow, liPositions);
+        PreviewGrid.ItemsSource = liValues
+            .Select((value, i) => new PreviewRow($"column{i + 1}", liPositions[i], value.Length, value))
             .ToList();
 
-        PositionCount.Text = positions.Length == 0
+        PositionCount.Text = liPositions.Length == 0
             ? "No cuts yet - type the separator wherever a column should end."
-            : $"{positions.Length} column(s), {row.Length} character(s) in the row.";
+            : $"{liPositions.Length} column(s), {strRow.Length} character(s) in the row.";
     }
 
     private void OnAccept(object sender, RoutedEventArgs e) => DialogResult = true;

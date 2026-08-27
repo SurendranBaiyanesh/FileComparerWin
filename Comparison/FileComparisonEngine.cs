@@ -8,13 +8,12 @@ namespace FileComparerWindows.Comparison;
 /// Row order is irrelevant; only keys and values decide the outcome.</summary>
 public sealed class FileComparisonEngine(ComparisonOptions options)
 {
-	// Unit separator: cannot occur in real data, so composite keys stay unambiguous.
-
 	#region Constants
-	private const char KeySeparator = (char) 0x1F;
+	// Unit separator: cannot occur in real data, so composite keys stay unambiguous.
+	private const char KEY_SEPARATOR = (char) 0x1F;
 
 	// What a decoder substitutes for bytes it could not make sense of.
-	private const char ReplacementCharacter = (char) 0xFFFD;
+	private const char REPLACEMENT_CHARACTER = (char) 0xFFFD;
 	#endregion
 
 	#region Public methods
@@ -22,70 +21,70 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 	{
 		ValidateOptions();
 		RequireMatchingColumns(input, output);
-		List<string> keyColumns = ResolveKeyColumns(input, output);
-		List<string> comparedColumns = SelectComparableColumns(input, output, keyColumns);
+		List<string> liKeyColumns = ResolveKeyColumns(input, output);
+		List<string> liComparedColumns = SelectComparableColumns(input, output, liKeyColumns);
 
-		Dictionary<string, List<DataRow>> inputGroups = GroupByKey(input, keyColumns);
-		Dictionary<string, List<DataRow>> outputGroups = GroupByKey(output, keyColumns);
+		Dictionary<string, List<DataRow>> inputGroups = GroupByKey(input, liKeyColumns);
+		Dictionary<string, List<DataRow>> outputGroups = GroupByKey(output, liKeyColumns);
 
-		List<RowMismatch> mismatches = new();
-		List<KeyedRow> missingInOutput = new();
-		List<KeyedRow> extraInOutput = new();
-		List<MatchedRow> matchedRows = new();
-		List<SimilarMatch> similarMatches = new();
+		List<RowMismatch> liMismatches = new();
+		List<KeyedRow> liMissingInOutput = new();
+		List<KeyedRow> liExtraInOutput = new();
+		List<MatchedRow> liMatchedRows = new();
+		List<SimilarMatch> liSimilarMatches = new();
 
-		foreach((string key, List<DataRow> inputRows) in inputGroups)
+		foreach((string strKey, List<DataRow> inputRows) in inputGroups)
 		{
-			if(!outputGroups.TryGetValue(key, out List<DataRow>? outputRows))
+			if(!outputGroups.TryGetValue(strKey, out List<DataRow>? outputRows))
 			{
-				missingInOutput.AddRange(inputRows.Select(r => new KeyedRow(DisplayKey(input, r, keyColumns), r)));
+				liMissingInOutput.AddRange(inputRows.Select(r => new KeyedRow(DisplayKey(input, r, liKeyColumns), r)));
 				continue;
 			}
 
-			int pairCount = Math.Min(inputRows.Count, outputRows.Count);
-			for(int i = 0; i < pairCount; i++)
+			int nPairCount = Math.Min(inputRows.Count, outputRows.Count);
+			for(int i = 0; i < nPairCount; i++)
 			{
-				(List<ValueDifference> differences, List<ValueDifference> similar) = CompareValues(input, inputRows[i], output, outputRows[i], comparedColumns);
+				(List<ValueDifference> liDifferences, List<ValueDifference> liSimilar) = CompareValues(input, inputRows[i], output, outputRows[i], liComparedColumns);
 
-				string displayKey = DisplayKey(input, inputRows[i], keyColumns);
+				string strDisplayKey = DisplayKey(input, inputRows[i], liKeyColumns);
 
 				// A row with something genuinely wrong is a mismatch whatever else it also has, so the
 				// three lists divide the paired rows between them rather than overlapping.
-				if(differences.Count > 0)
+				if(liDifferences.Count > 0)
 				{
-					mismatches.Add(new RowMismatch(displayKey, inputRows[i], outputRows[i], differences));
+					liMismatches.Add(new RowMismatch(strDisplayKey, inputRows[i], outputRows[i], liDifferences));
 				}
-				else if(similar.Count > 0)
+				else if(liSimilar.Count > 0)
 				{
-					similarMatches.Add(new SimilarMatch(displayKey, inputRows[i], outputRows[i], similar));
+					liSimilarMatches.Add(new SimilarMatch(strDisplayKey, inputRows[i], outputRows[i], liSimilar));
 				}
 				else
 				{
-					matchedRows.Add(new MatchedRow(displayKey, inputRows[i], outputRows[i]));
+					liMatchedRows.Add(new MatchedRow(strDisplayKey, inputRows[i], outputRows[i]));
 				}
 			}
 
 			// Duplicate keys: whatever is left over on either side has no counterpart.
-			missingInOutput.AddRange(inputRows.Skip(pairCount).Select(r => new KeyedRow(DisplayKey(input, r, keyColumns), r)));
-			extraInOutput.AddRange(outputRows.Skip(pairCount).Select(r => new KeyedRow(DisplayKey(output, r, keyColumns), r)));
+			liMissingInOutput.AddRange(inputRows.Skip(nPairCount).Select(r => new KeyedRow(DisplayKey(input, r, liKeyColumns), r)));
+			liExtraInOutput.AddRange(outputRows.Skip(nPairCount).Select(r => new KeyedRow(DisplayKey(output, r, liKeyColumns), r)));
 		}
 
-		foreach((string key, List<DataRow> outputRows) in outputGroups.Where(g => !inputGroups.ContainsKey(g.Key)))
+		foreach((string strKey, List<DataRow> outputRows) in outputGroups.Where(g => !inputGroups.ContainsKey(g.Key)))
 		{
-			extraInOutput.AddRange(outputRows.Select(r => new KeyedRow(DisplayKey(output, r, keyColumns), r)));
+			liExtraInOutput.AddRange(outputRows.Select(r => new KeyedRow(DisplayKey(output, r, liKeyColumns), r)));
 		}
 
 		return new ComparisonResult
 		       {
 			       Input = input,
 			       Output = output,
-			       KeyColumns = keyColumns,
-			       ComparedColumns = comparedColumns,
-			       MatchedRows = matchedRows,
-			       SimilarMatches = similarMatches,
-			       ValueMismatches = mismatches,
-			       MissingInOutput = missingInOutput,
-			       ExtraInOutput = extraInOutput,
+			       KeyColumns = liKeyColumns,
+			       ComparedColumns = liComparedColumns,
+			       MatchedRows = liMatchedRows,
+			       SimilarMatches = liSimilarMatches,
+			       ValueMismatches = liMismatches,
+			       MissingInOutput = liMissingInOutput,
+			       ExtraInOutput = liExtraInOutput,
 			       DuplicateKeyWarnings = [.. DescribeDuplicates("Input", inputGroups), .. DescribeDuplicates("Output", outputGroups)],
 			       OptionWarnings = [.. DescribeOptionsThatChangedNothing()]
 		       };
@@ -98,20 +97,20 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 	/// </summary>
 	public static ColumnMismatch? FindColumnMismatch(DataTable input, DataTable output)
 	{
-		List<string> onlyInInput = [.. input.Columns.Where(c => !output.HasColumn(c))];
-		List<string> onlyInOutput = [.. output.Columns.Where(c => !input.HasColumn(c))];
+		List<string> liOnlyInInput = [.. input.Columns.Where(c => !output.HasColumn(c))];
+		List<string> liOnlyInOutput = [.. output.Columns.Where(c => !input.HasColumn(c))];
 
-		if(onlyInInput.Count == 0 && onlyInOutput.Count == 0) return null;
+		if(liOnlyInInput.Count == 0 && liOnlyInOutput.Count == 0) return null;
 
-		List<string> sides = [];
-		if(onlyInInput.Count > 0) sides.Add($"only in the input file: {string.Join(", ", onlyInInput)}");
+		List<string> liSides = [];
+		if(liOnlyInInput.Count > 0) liSides.Add($"only in the input file: {string.Join(", ", liOnlyInInput)}");
 
-		if(onlyInOutput.Count > 0) sides.Add($"only in the output file: {string.Join(", ", onlyInOutput)}");
+		if(liOnlyInOutput.Count > 0) liSides.Add($"only in the output file: {string.Join(", ", liOnlyInOutput)}");
 
-		string headline = $"The two files do not have the same columns - {string.Join("; ", sides)}.";
+		string strHeadline = $"The two files do not have the same columns - {string.Join("; ", liSides)}.";
 
-		return new ColumnMismatch(headline,
-		                          $"{headline}{Environment.NewLine}" +
+		return new ColumnMismatch(strHeadline,
+		                          $"{strHeadline}{Environment.NewLine}" +
 		                          $"  Input columns : {string.Join(", ", input.Columns)}{Environment.NewLine}" +
 		                          $"  Output columns: {string.Join(", ", output.Columns)}" +
 		                          EncodingHint(input, output));
@@ -147,10 +146,10 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 	{
 		if(options.KeyColumns.Count == 0) throw new InvalidOperationException("At least one key column is required. Type it into Key columns, or use Pick to choose from the file's header.");
 
-		List<string> missing = options.KeyColumns.Where(c => !input.HasColumn(c) || !output.HasColumn(c)).ToList();
-		if(missing.Count > 0)
+		List<string> liMissing = options.KeyColumns.Where(c => !input.HasColumn(c) || !output.HasColumn(c)).ToList();
+		if(liMissing.Count > 0)
 		{
-			throw new InvalidOperationException($"Column(s) not present in both files: {string.Join(", ", missing)}.{Environment.NewLine}" +
+			throw new InvalidOperationException($"Column(s) not present in both files: {string.Join(", ", liMissing)}.{Environment.NewLine}" +
 			                                    $"  Input columns : {string.Join(", ", input.Columns)}{Environment.NewLine}" +
 			                                    $"  Output columns: {string.Join(", ", output.Columns)}" +
 			                                    EncodingHint(input, output));
@@ -165,30 +164,30 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 	/// </summary>
 	private static string EncodingHint(DataTable input, DataTable output)
 	{
-		if(!input.Columns.Concat(output.Columns).Any(c => c.Contains(ReplacementCharacter))) return string.Empty;
+		if(!input.Columns.Concat(output.Columns).Any(c => c.Contains(REPLACEMENT_CHARACTER))) return string.Empty;
 
-		return $"{Environment.NewLine}  A column name above contains '{ReplacementCharacter}', so that file was not " + "read in the encoding it was written in. Try setting Encoding to windows-1252.";
+		return $"{Environment.NewLine}  A column name above contains '{REPLACEMENT_CHARACTER}', so that file was not " + "read in the encoding it was written in. Try setting Encoding to windows-1252.";
 	}
 
 	/// <summary>
 	/// Settles which columns are compared: the ones named for comparison, or every column the two files
 	/// share when none are named. Naming them is how a column is left out.
 	/// </summary>
-	private List<string> SelectComparableColumns(DataTable input, DataTable output, List<string> keyColumns)
+	private List<string> SelectComparableColumns(DataTable input, DataTable output, List<string> liKeyColumns)
 	{
 		if(options.CompareColumns.Count > 0)
 		{
-			List<string> missing = options.CompareColumns.Where(c => !input.HasColumn(c) || !output.HasColumn(c)).ToList();
-			if(missing.Count > 0) throw new InvalidOperationException($"Compare column(s) not present in both files: {string.Join(", ", missing)}.");
+			List<string> liMissing = options.CompareColumns.Where(c => !input.HasColumn(c) || !output.HasColumn(c)).ToList();
+			if(liMissing.Count > 0) throw new InvalidOperationException($"Compare column(s) not present in both files: {string.Join(", ", liMissing)}.");
 
 			return [.. options.CompareColumns.Select(input.ResolveColumnName)];
 		}
 
-		List<string> common = input.Columns.Where(output.HasColumn).ToList();
-		List<string> nonKey = common.Where(c => !keyColumns.Contains(c, StringComparer.OrdinalIgnoreCase)).ToList();
+		List<string> liCommon = input.Columns.Where(output.HasColumn).ToList();
+		List<string> liNonKey = liCommon.Where(c => !liKeyColumns.Contains(c, StringComparer.OrdinalIgnoreCase)).ToList();
 
 		// With only key columns in common there is nothing left to compare, so the keys themselves are the comparison.
-		return nonKey.Count > 0 ? nonKey : common;
+		return liNonKey.Count > 0 ? liNonKey : liCommon;
 	}
 
 	/// <summary>
@@ -198,14 +197,14 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 	/// a row belongs to. Rows therefore pair on keys that are equal, and the range applies afterwards, to
 	/// the values being compared.
 	/// </summary>
-	private Dictionary<string, List<DataRow>> GroupByKey(DataTable table, List<string> keyColumns)
+	private Dictionary<string, List<DataRow>> GroupByKey(DataTable table, List<string> liKeyColumns)
 	{
 		Dictionary<string, List<DataRow>> groups = new(StringComparer.Ordinal);
 
 		foreach(DataRow row in table.Rows)
 		{
-			string key = string.Join(KeySeparator, keyColumns.Select(c => Normalize(table.GetValue(row, c))));
-			if(!groups.TryGetValue(key, out List<DataRow>? rows)) groups[key] = rows = [];
+			string strKey = string.Join(KEY_SEPARATOR, liKeyColumns.Select(c => Normalize(table.GetValue(row, c))));
+			if(!groups.TryGetValue(strKey, out List<DataRow>? rows)) groups[strKey] = rows = [];
 
 			rows.Add(row);
 		}
@@ -220,21 +219,21 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 	/// </summary>
 	private (List<ValueDifference> Differences, List<ValueDifference> Similar) CompareValues(DataTable input, DataRow inputRow, DataTable output, DataRow outputRow, List<string> columns)
 	{
-		List<ValueDifference> differences = new();
-		List<ValueDifference> similar = new();
+		List<ValueDifference> liDifferences = new();
+		List<ValueDifference> liSimilar = new();
 
 		foreach(string column in columns)
 		{
-			string inputValue = input.GetValue(inputRow, column);
-			string outputValue = output.GetValue(outputRow, column);
+			string strInputValue = input.GetValue(inputRow, column);
+			string strOutputValue = output.GetValue(outputRow, column);
 
-			if(string.Equals(Normalize(inputValue), Normalize(outputValue), StringComparison.Ordinal)) continue;
+			if(string.Equals(Normalize(strInputValue), Normalize(strOutputValue), StringComparison.Ordinal)) continue;
 
-			if(IsWithinRange(inputValue, outputValue)) similar.Add(new ValueDifference(column, inputValue, outputValue));
-			else differences.Add(new ValueDifference(column, inputValue, outputValue));
+			if(IsWithinRange(strInputValue, strOutputValue)) liSimilar.Add(new ValueDifference(column, strInputValue, strOutputValue));
+			else liDifferences.Add(new ValueDifference(column, strInputValue, strOutputValue));
 		}
 
-		return (differences, similar);
+		return (liDifferences, liSimilar);
 	}
 
 	/// <summary>
@@ -242,11 +241,11 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 	/// distance, and there is no distance between a number and a word, so anything else stays the text
 	/// comparison it already failed.
 	/// </summary>
-	private bool IsWithinRange(string inputValue, string outputValue)
+	private bool IsWithinRange(string strInputValue, string strOutputValue)
 	{
 		if(!options.SimilarMatch || options.SimilarMatchRange <= 0) return false;
 
-		if(!TryParseNumber(Prepare(inputValue), out decimal left) || !TryParseNumber(Prepare(outputValue), out decimal right)) return false;
+		if(!TryParseNumber(Prepare(strInputValue), out decimal left) || !TryParseNumber(Prepare(strOutputValue), out decimal right)) return false;
 
 		try
 		{
@@ -307,15 +306,15 @@ public sealed class FileComparisonEngine(ComparisonOptions options)
 		return range.ToString("0.############################", CultureInfo.InvariantCulture);
 	}
 
-	private string DisplayKey(DataTable table, DataRow row, List<string> keyColumns)
+	private string DisplayKey(DataTable table, DataRow row, List<string> liKeyColumns)
 	{
-		return string.Join(", ", keyColumns.Select(c => $"{c}={table.GetValue(row, c)}"));
+		return string.Join(", ", liKeyColumns.Select(c => $"{c}={table.GetValue(row, c)}"));
 	}
 
 	private static IEnumerable<string> DescribeDuplicates(string side, Dictionary<string, List<DataRow>> groups)
 	{
 		return groups.Where(g => g.Value.Count > 1)
-		             .Select(g => $"{side} file has {g.Value.Count} rows with key '{g.Key.Replace(KeySeparator, '|')}' (lines {string.Join(", ", g.Value.Select(r => r.LineNumber))}).");
+		             .Select(g => $"{side} file has {g.Value.Count} rows with key '{g.Key.Replace(KEY_SEPARATOR, '|')}' (lines {string.Join(", ", g.Value.Select(r => r.LineNumber))}).");
 	}
 	#endregion
 }

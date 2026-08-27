@@ -22,27 +22,27 @@ public sealed class XmlTableReader : ITableReader
 	{
 		XElement root = XDocument.Load(path, LoadOptions.SetLineInfo).Root ?? throw new InvalidDataException($"'{path}' has no root element.");
 
-		List<XElement> rowElements = FindRowElements(root);
-		if(rowElements.Count == 0) throw new InvalidDataException($"No record elements found in '{path}'.");
+		List<XElement> liRowElements = FindRowElements(root);
+		if(liRowElements.Count == 0) throw new InvalidDataException($"No record elements found in '{path}'.");
 
-		List<string> columns = new();
+		List<string> liColumns = new();
 		HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
 		List<(int LineNumber, Dictionary<string, string> Cells)> cellsPerRow = new();
 
-		foreach(XElement element in rowElements)
+		foreach(XElement element in liRowElements)
 		{
 			Dictionary<string, string> cells = ReadCells(element);
 			foreach(string name in cells.Keys)
 			{
-				if(seen.Add(name)) columns.Add(name);
+				if(seen.Add(name)) liColumns.Add(name);
 			}
 
 			cellsPerRow.Add((((IXmlLineInfo) element).LineNumber, cells));
 		}
 
-		List<(int LineNumber, List<string>)> records = cellsPerRow.Select(r => (r.LineNumber, columns.Select(c => r.Cells.GetValueOrDefault(c, string.Empty)).ToList())).ToList();
+		List<(int LineNumber, List<string>)> records = cellsPerRow.Select(r => (r.LineNumber, liColumns.Select(c => r.Cells.GetValueOrDefault(c, string.Empty)).ToList())).ToList();
 
-		return TableBuilder.Build(path, this.FormatName, columns, records);
+		return TableBuilder.Build(path, this.FormatName, liColumns, records);
 	}
 
 	/// <summary>Descends through single-element wrappers such as &lt;Root&gt;&lt;Rows&gt;… until it reaches the repeated records.</summary>
@@ -54,10 +54,10 @@ public sealed class XmlTableReader : ITableReader
 		XElement current = root;
 		while(true)
 		{
-			List<XElement> children = current.Elements().ToList();
-			if(children.Count != 1 || !children[0].Elements().Any(c => c.HasElements || c.HasAttributes)) return children;
+			List<XElement> liChildren = current.Elements().ToList();
+			if(liChildren.Count != 1 || !liChildren[0].Elements().Any(c => c.HasElements || c.HasAttributes)) return liChildren;
 
-			current = children[0];
+			current = liChildren[0];
 		}
 	}
 

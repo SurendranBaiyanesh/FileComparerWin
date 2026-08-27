@@ -7,6 +7,31 @@ namespace FileComparerWindows.Configuration;
 
 public sealed class ComparisonOptions
 {
+	#region Constants
+	/// <summary>
+	/// The delimiter that means "there is no delimiter - cut the line at <see cref="SplitIndexes"/>
+	/// instead". Spelt out in the settings file rather than inferred from the positions being filled
+	/// in, so that a file can keep its positions while being read by an ordinary separator again.
+	/// </summary>
+	public const string DYNAMIC_DELIMITER = "Dynamic";
+	#endregion
+
+	#region Fields
+	private static readonly JsonSerializerOptions READ_OPTIONS = new()
+	                                                            {
+		                                                            PropertyNameCaseInsensitive = true,
+		                                                            ReadCommentHandling = JsonCommentHandling.Skip,
+		                                                            AllowTrailingCommas = true
+	                                                            };
+
+	private static readonly JsonSerializerOptions WRITE_OPTIONS = new()
+	                                                             {
+		                                                             WriteIndented = true,
+		                                                             // Column names carry accents; escaping them would leave a settings file no one can read.
+		                                                             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+	                                                             };
+	#endregion
+
 	#region Properties
 	public string InputFilePath { get; set; } = string.Empty;
 	public string OutputFilePath { get; set; } = string.Empty;
@@ -34,18 +59,11 @@ public sealed class ComparisonOptions
 	/// </summary>
 	public decimal SimilarMatchRange { get; set; }
 
-	/// <summary>
-	/// The delimiter that means "there is no delimiter - cut the line at <see cref="SplitIndexes"/>
-	/// instead". Spelt out in the settings file rather than inferred from the positions being filled
-	/// in, so that a file can keep its positions while being read by an ordinary separator again.
-	/// </summary>
-	public const string DynamicDelimiter = "Dynamic";
-
 	/// <summary>Delimiter for text files. Empty means detect it from the header line.</summary>
 	public string Delimiter { get; set; } = string.Empty;
 
 	/// <summary>True when the files are to be cut at fixed positions rather than on a separator.</summary>
-	public bool IsDynamic => string.Equals(this.Delimiter.Trim(), DynamicDelimiter, StringComparison.OrdinalIgnoreCase);
+	public bool IsDynamic => string.Equals(this.Delimiter.Trim(), DYNAMIC_DELIMITER, StringComparison.OrdinalIgnoreCase);
 
 	/// <summary>
 	/// Where to cut a fixed-width line that has no delimiter to cut on, as a list of positions:
@@ -86,8 +104,8 @@ public sealed class ComparisonOptions
 
 		// Read the same tolerant way as the data files: a settings file saved as ANSI would otherwise
 		// mangle the very column names it exists to specify.
-		string json = TextFile.Read(path).Text;
-		AppSettings? settings = JsonSerializer.Deserialize<AppSettings>(json, ReadOptions);
+		string strJson = TextFile.Read(path).Text;
+		AppSettings? settings = JsonSerializer.Deserialize<AppSettings>(strJson, READ_OPTIONS);
 		return settings?.FileComparer ?? new ComparisonOptions();
 	}
 
@@ -99,25 +117,9 @@ public sealed class ComparisonOptions
 	public void SaveToFile(string path)
 	{
 		AppSettings settings = new() { FileComparer = this };
-		string json = JsonSerializer.Serialize(settings, WriteOptions);
-		File.WriteAllText(path, json, new UTF8Encoding(false));
+		string strJson = JsonSerializer.Serialize(settings, WRITE_OPTIONS);
+		File.WriteAllText(path, strJson, new UTF8Encoding(false));
 	}
-	#endregion
-
-	#region Fields
-	private static readonly JsonSerializerOptions ReadOptions = new()
-	                                                            {
-		                                                            PropertyNameCaseInsensitive = true,
-		                                                            ReadCommentHandling = JsonCommentHandling.Skip,
-		                                                            AllowTrailingCommas = true
-	                                                            };
-
-	private static readonly JsonSerializerOptions WriteOptions = new()
-	                                                             {
-		                                                             WriteIndented = true,
-		                                                             // Column names carry accents; escaping them would leave a settings file no one can read.
-		                                                             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-	                                                             };
 	#endregion
 
 	#region Nested types

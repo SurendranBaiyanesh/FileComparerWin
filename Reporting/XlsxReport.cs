@@ -20,37 +20,37 @@ public static class XlsxReport
 	#region Constants
 	// A relationship's Type is a plain URI in an attribute, not a namespace: XNamespace + "name" would
 	// be written out as "{namespace}name" and leave a package Excel will not open.
-	private const string RelationshipType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+	private const string RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
 	/// <summary>Excel's own ceiling. A sheet with one row more than this will not open at all.</summary>
-	private const int SheetRowLimit = 1_048_576;
+	private const int SHEET_ROW_LIMIT = 1_048_576;
 
 	// Column widths are counted in characters. Narrow enough and a heading is cut off by its own
 	// column; wide enough and one long value pushes everything after it off the screen.
-	private const int MinColumnWidth = 9;
-	private const int MaxColumnWidth = 60;
+	private const int MIN_COLUMN_WIDTH = 9;
+	private const int MAX_COLUMN_WIDTH = 60;
 
 	/// <summary>
 	/// The one format the report defines, and the index it therefore has in cellXfs. Everything else
 	/// is left at the workbook's default.
 	/// </summary>
-	private const int HeaderStyle = 1;
+	private const int HEADER_STYLE = 1;
 
 	/// <summary>What holds the values apart when the column names are numbers and are left out.</summary>
-	private const string GeneratedNameSeparator = ";";
+	private const string GENERATED_NAME_SEPARATOR = ";";
 	#endregion
 
 	#region Fields
-	private static readonly XNamespace Main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
-	private static readonly XNamespace DocumentRelationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-	private static readonly XNamespace PackageRelationships = "http://schemas.openxmlformats.org/package/2006/relationships";
-	private static readonly XNamespace ContentTypes = "http://schemas.openxmlformats.org/package/2006/content-types";
+	private static readonly XNamespace MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+	private static readonly XNamespace DOCUMENT_RELATIONSHIPS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+	private static readonly XNamespace PACKAGE_RELATIONSHIPS = "http://schemas.openxmlformats.org/package/2006/relationships";
+	private static readonly XNamespace CONTENT_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types";
 
 	/// <summary>
 	/// The five value sheets all carry these, so that a reader learns one shape and a filter or a
 	/// formula written against one of them works against any of them.
 	/// </summary>
-	private static readonly string[] StandardHeader = ["Keys", "Input file value", "Output file value", "Difference", "Other column values"];
+	private static readonly string[] STANDARD_HEADER = ["Keys", "Input file value", "Output file value", "Difference", "Other column values"];
 	#endregion
 
 	#region Public methods
@@ -67,20 +67,20 @@ public static class XlsxReport
 			DifferenceValues(result)
 		];
 
-		List<Sheet> sheets = [Overview(result, options, values), .. values];
+		List<Sheet> liSheets = [Overview(result, options, values), .. values];
 
 		using FileStream file = File.Create(path);
 		using ZipArchive archive = new(file, ZipArchiveMode.Create);
 
-		Write(archive, "[Content_Types].xml", ContentTypesPart(sheets.Count));
+		Write(archive, "[Content_Types].xml", ContentTypesPart(liSheets.Count));
 		Write(archive, "_rels/.rels", RootRelationships());
-		Write(archive, "xl/workbook.xml", Workbook(sheets));
-		Write(archive, "xl/_rels/workbook.xml.rels", WorkbookRelationships(sheets.Count));
+		Write(archive, "xl/workbook.xml", Workbook(liSheets));
+		Write(archive, "xl/_rels/workbook.xml.rels", WorkbookRelationships(liSheets.Count));
 		Write(archive, "xl/styles.xml", Styles());
 
-		for(int i = 0; i < sheets.Count; i++)
+		for(int i = 0; i < liSheets.Count; i++)
 		{
-			Write(archive, $"xl/worksheets/sheet{i + 1}.xml", Worksheet(sheets[i]));
+			Write(archive, $"xl/worksheets/sheet{i + 1}.xml", Worksheet(liSheets[i]));
 		}
 	}
 
@@ -133,10 +133,10 @@ public static class XlsxReport
 		// would be a worse thing than a long one, so every row is written here whatever that says.
 		sheet.Add("Note", "Every row is written to the sheets, whatever Max rows is set to.");
 
-		List<string> warnings = [.. result.DuplicateKeyWarnings, .. result.OptionWarnings];
+		List<string> liWarnings = [.. result.DuplicateKeyWarnings, .. result.OptionWarnings];
 		sheet.Blank();
-		sheet.Add("Warnings", warnings.Count == 0 ? "none" : $"{warnings.Count}");
-		foreach(string warning in warnings)
+		sheet.Add("Warnings", liWarnings.Count == 0 ? "none" : $"{liWarnings.Count}");
+		foreach(string warning in liWarnings)
 		{
 			sheet.Add("", warning);
 		}
@@ -145,10 +145,10 @@ public static class XlsxReport
 	}
 
 	/// <summary>Row 1 of a value sheet: highlighted, and carrying the filter arrows.</summary>
-	private static Sheet ValueSheet(string name)
+	private static Sheet ValueSheet(string strName)
 	{
-		Sheet sheet = new(name) { Filtered = true };
-		sheet.AddHeader(StandardHeader);
+		Sheet sheet = new(strName) { Filtered = true };
+		sheet.AddHeader(STANDARD_HEADER);
 		return sheet;
 	}
 
@@ -159,19 +159,19 @@ public static class XlsxReport
 	/// </summary>
 	private static void NameWithCount(Sheet sheet, string full, string shortened)
 	{
-		string suffix = $" ({sheet.DataRowCount.ToString("N0", CultureInfo.CurrentCulture)})";
+		string strSuffix = $" ({sheet.DataRowCount.ToString("N0", CultureInfo.CurrentCulture)})";
 
 		foreach(string candidate in (string[]) [full, shortened])
 		{
-			if(candidate.Length + suffix.Length <= 31)
+			if(candidate.Length + strSuffix.Length <= 31)
 			{
-				sheet.Rename(candidate + suffix);
+				sheet.Rename(candidate + strSuffix);
 				return;
 			}
 		}
 
-		int room = Math.Max(0, 31 - suffix.Length);
-		sheet.Rename(shortened[..Math.Min(shortened.Length, room)].TrimEnd() + suffix);
+		int nRoom = Math.Max(0, 31 - strSuffix.Length);
+		sheet.Rename(shortened[..Math.Min(shortened.Length, nRoom)].TrimEnd() + strSuffix);
 	}
 
 	/// <summary>
@@ -296,12 +296,12 @@ public static class XlsxReport
 	/// </summary>
 	private static string OtherValues(ComparisonResult result, DataTable table, DataRow row, string subject)
 	{
-		IEnumerable<string> columns = table.Columns.Where(c => !SameColumn(c, subject)).Where(c => !result.KeyColumns.Any(k => SameColumn(k, c)));
+		IEnumerable<string> liColumns = table.Columns.Where(c => !SameColumn(c, subject)).Where(c => !result.KeyColumns.Any(k => SameColumn(k, c)));
 
 		// Names the file never had say nothing worth the room: "column1=EI; column2=0; column3=VPA" is
 		// mostly punctuation where "EI;0;VPA" is the record. Only the values, then, for a file whose
 		// columns were numbered rather than named.
-		if(table.HasGeneratedColumnNames) return string.Join(GeneratedNameSeparator, columns.Select(c => table.GetValue(row, c)));
+		if(table.HasGeneratedColumnNames) return string.Join(GENERATED_NAME_SEPARATOR, liColumns.Select(c => table.GetValue(row, c)));
 
 		// A delimited file gets its own separator back, so the cell reads the way the row reads in the
 		// file it came from: with a |" file, 70986830|"8111|" rather than Test=70986830; Test1=8111.
@@ -309,8 +309,8 @@ public static class XlsxReport
 		// value keeps the name of the column it came from - otherwise the cell is a row of bare values
 		// with nothing to say which is which.
 		return table.Delimiter is { Length: > 0 } delimiter 
-			? string.Concat(columns.Select(c => table.GetValue(row, c) + delimiter))
-			: string.Join("; ", columns.Select(c => $"{c}={table.GetValue(row, c)}"));
+			? string.Concat(liColumns.Select(c => table.GetValue(row, c) + delimiter))
+			: string.Join("; ", liColumns.Select(c => $"{c}={table.GetValue(row, c)}"));
 	}
 
 	/// <summary>Names matched the way <see cref="DataTable"/> matches them, so an accent written two ways is one column.</summary>
@@ -342,42 +342,42 @@ public static class XlsxReport
 	/// </summary>
 	private static XDocument Styles()
 	{
-		return new XDocument(new XElement(Main + "styleSheet",
-		                                  new XElement(Main + "fonts", new XAttribute("count", 2),
-		                                               new XElement(Main + "font",
-		                                                            new XElement(Main + "sz", new XAttribute("val", 11)),
-		                                                            new XElement(Main + "name", new XAttribute("val", "Calibri"))),
-		                                               new XElement(Main + "font",
-		                                                            new XElement(Main + "b"),
-		                                                            new XElement(Main + "sz", new XAttribute("val", 11)),
-		                                                            new XElement(Main + "color", new XAttribute("rgb", "FF14532D")),
-		                                                            new XElement(Main + "name", new XAttribute("val", "Calibri")))),
-		                                  new XElement(Main + "fills", new XAttribute("count", 3),
-		                                               new XElement(Main + "fill", new XElement(Main + "patternFill", new XAttribute("patternType", "none"))),
-		                                               new XElement(Main + "fill", new XElement(Main + "patternFill", new XAttribute("patternType", "gray125"))),
-		                                               new XElement(Main + "fill",
-		                                                            new XElement(Main + "patternFill", new XAttribute("patternType", "solid"),
-		                                                                         new XElement(Main + "fgColor", new XAttribute("rgb", "FFD7ECDD")),
-		                                                                         new XElement(Main + "bgColor", new XAttribute("indexed", 64))))),
-		                                  new XElement(Main + "borders", new XAttribute("count", 2),
-		                                               new XElement(Main + "border",
-		                                                            new XElement(Main + "left"), new XElement(Main + "right"),
-		                                                            new XElement(Main + "top"), new XElement(Main + "bottom"),
-		                                                            new XElement(Main + "diagonal")),
-		                                               new XElement(Main + "border",
-		                                                            new XElement(Main + "left"), new XElement(Main + "right"), new XElement(Main + "top"),
-		                                                            new XElement(Main + "bottom", new XAttribute("style", "thin"),
-		                                                                         new XElement(Main + "color", new XAttribute("rgb", "FF9CBBA6"))),
-		                                                            new XElement(Main + "diagonal"))),
-		                                  new XElement(Main + "cellStyleXfs", new XAttribute("count", 1),
-		                                               new XElement(Main + "xf",
+		return new XDocument(new XElement(MAIN + "styleSheet",
+		                                  new XElement(MAIN + "fonts", new XAttribute("count", 2),
+		                                               new XElement(MAIN + "font",
+		                                                            new XElement(MAIN + "sz", new XAttribute("val", 11)),
+		                                                            new XElement(MAIN + "name", new XAttribute("val", "Calibri"))),
+		                                               new XElement(MAIN + "font",
+		                                                            new XElement(MAIN + "b"),
+		                                                            new XElement(MAIN + "sz", new XAttribute("val", 11)),
+		                                                            new XElement(MAIN + "color", new XAttribute("rgb", "FF14532D")),
+		                                                            new XElement(MAIN + "name", new XAttribute("val", "Calibri")))),
+		                                  new XElement(MAIN + "fills", new XAttribute("count", 3),
+		                                               new XElement(MAIN + "fill", new XElement(MAIN + "patternFill", new XAttribute("patternType", "none"))),
+		                                               new XElement(MAIN + "fill", new XElement(MAIN + "patternFill", new XAttribute("patternType", "gray125"))),
+		                                               new XElement(MAIN + "fill",
+		                                                            new XElement(MAIN + "patternFill", new XAttribute("patternType", "solid"),
+		                                                                         new XElement(MAIN + "fgColor", new XAttribute("rgb", "FFD7ECDD")),
+		                                                                         new XElement(MAIN + "bgColor", new XAttribute("indexed", 64))))),
+		                                  new XElement(MAIN + "borders", new XAttribute("count", 2),
+		                                               new XElement(MAIN + "border",
+		                                                            new XElement(MAIN + "left"), new XElement(MAIN + "right"),
+		                                                            new XElement(MAIN + "top"), new XElement(MAIN + "bottom"),
+		                                                            new XElement(MAIN + "diagonal")),
+		                                               new XElement(MAIN + "border",
+		                                                            new XElement(MAIN + "left"), new XElement(MAIN + "right"), new XElement(MAIN + "top"),
+		                                                            new XElement(MAIN + "bottom", new XAttribute("style", "thin"),
+		                                                                         new XElement(MAIN + "color", new XAttribute("rgb", "FF9CBBA6"))),
+		                                                            new XElement(MAIN + "diagonal"))),
+		                                  new XElement(MAIN + "cellStyleXfs", new XAttribute("count", 1),
+		                                               new XElement(MAIN + "xf",
 		                                                            new XAttribute("numFmtId", 0), new XAttribute("fontId", 0),
 		                                                            new XAttribute("fillId", 0), new XAttribute("borderId", 0))),
-		                                  new XElement(Main + "cellXfs", new XAttribute("count", 2),
-		                                               new XElement(Main + "xf",
+		                                  new XElement(MAIN + "cellXfs", new XAttribute("count", 2),
+		                                               new XElement(MAIN + "xf",
 		                                                            new XAttribute("numFmtId", 0), new XAttribute("fontId", 0),
 		                                                            new XAttribute("fillId", 0), new XAttribute("borderId", 0), new XAttribute("xfId", 0)),
-		                                               new XElement(Main + "xf",
+		                                               new XElement(MAIN + "xf",
 		                                                            new XAttribute("numFmtId", 0), new XAttribute("fontId", 1),
 		                                                            new XAttribute("fillId", 2), new XAttribute("borderId", 1), new XAttribute("xfId", 0),
 		                                                            new XAttribute("applyFont", 1), new XAttribute("applyFill", 1), new XAttribute("applyBorder", 1)))));
@@ -385,18 +385,18 @@ public static class XlsxReport
 
 	private static XDocument ContentTypesPart(int sheetCount)
 	{
-		XElement types = new(ContentTypes + "Types",
-		                     new XElement(ContentTypes + "Default", new XAttribute("Extension", "rels"),
+		XElement types = new(CONTENT_TYPES + "Types",
+		                     new XElement(CONTENT_TYPES + "Default", new XAttribute("Extension", "rels"),
 		                                  new XAttribute("ContentType", "application/vnd.openxmlformats-package.relationships+xml")),
-		                     new XElement(ContentTypes + "Default", new XAttribute("Extension", "xml"),
+		                     new XElement(CONTENT_TYPES + "Default", new XAttribute("Extension", "xml"),
 		                                  new XAttribute("ContentType", "application/xml")),
-		                     new XElement(ContentTypes + "Override", new XAttribute("PartName", "/xl/workbook.xml"),
+		                     new XElement(CONTENT_TYPES + "Override", new XAttribute("PartName", "/xl/workbook.xml"),
 		                                  new XAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml")),
-		                     new XElement(ContentTypes + "Override", new XAttribute("PartName", "/xl/styles.xml"),
+		                     new XElement(CONTENT_TYPES + "Override", new XAttribute("PartName", "/xl/styles.xml"),
 		                                  new XAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml")));
 
 		for(int i = 1; i <= sheetCount; i++)
-			types.Add(new XElement(ContentTypes + "Override",
+			types.Add(new XElement(CONTENT_TYPES + "Override",
 			                       new XAttribute("PartName", $"/xl/worksheets/sheet{i}.xml"),
 			                       new XAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")));
 
@@ -405,40 +405,40 @@ public static class XlsxReport
 
 	private static XDocument RootRelationships()
 	{
-		return new XDocument(new XElement(PackageRelationships + "Relationships",
-		                                  new XElement(PackageRelationships + "Relationship",
+		return new XDocument(new XElement(PACKAGE_RELATIONSHIPS + "Relationships",
+		                                  new XElement(PACKAGE_RELATIONSHIPS + "Relationship",
 		                                               new XAttribute("Id", "rId1"),
-		                                               new XAttribute("Type", $"{RelationshipType}/officeDocument"),
+		                                               new XAttribute("Type", $"{RELATIONSHIP_TYPE}/officeDocument"),
 		                                               new XAttribute("Target", "xl/workbook.xml"))));
 	}
 
-	private static XDocument Workbook(List<Sheet> sheets)
+	private static XDocument Workbook(List<Sheet> liSheets)
 	{
-		XElement list = new(Main + "sheets");
-		for(int i = 0; i < sheets.Count; i++)
-			list.Add(new XElement(Main + "sheet",
-			                      new XAttribute("name", sheets[i].Name),
+		XElement list = new(MAIN + "sheets");
+		for(int i = 0; i < liSheets.Count; i++)
+			list.Add(new XElement(MAIN + "sheet",
+			                      new XAttribute("name", liSheets[i].Name),
 			                      new XAttribute("sheetId", i + 1),
-			                      new XAttribute(DocumentRelationships + "id", $"rId{i + 1}")));
+			                      new XAttribute(DOCUMENT_RELATIONSHIPS + "id", $"rId{i + 1}")));
 
-		return new XDocument(new XElement(Main + "workbook",
-		                                  new XAttribute(XNamespace.Xmlns + "r", DocumentRelationships),
+		return new XDocument(new XElement(MAIN + "workbook",
+		                                  new XAttribute(XNamespace.Xmlns + "r", DOCUMENT_RELATIONSHIPS),
 		                                  list));
 	}
 
 	private static XDocument WorkbookRelationships(int sheetCount)
 	{
-		XElement relationships = new(PackageRelationships + "Relationships");
+		XElement relationships = new(PACKAGE_RELATIONSHIPS + "Relationships");
 		for(int i = 1; i <= sheetCount; i++)
-			relationships.Add(new XElement(PackageRelationships + "Relationship",
+			relationships.Add(new XElement(PACKAGE_RELATIONSHIPS + "Relationship",
 			                               new XAttribute("Id", $"rId{i}"),
-			                               new XAttribute("Type", $"{RelationshipType}/worksheet"),
+			                               new XAttribute("Type", $"{RELATIONSHIP_TYPE}/worksheet"),
 			                               new XAttribute("Target", $"worksheets/sheet{i}.xml")));
 
 		// After the sheets, so that its id cannot collide with one of theirs.
-		relationships.Add(new XElement(PackageRelationships + "Relationship",
+		relationships.Add(new XElement(PACKAGE_RELATIONSHIPS + "Relationship",
 		                               new XAttribute("Id", $"rId{sheetCount + 1}"),
-		                               new XAttribute("Type", $"{RelationshipType}/styles"),
+		                               new XAttribute("Type", $"{RELATIONSHIP_TYPE}/styles"),
 		                               new XAttribute("Target", "styles.xml")));
 
 		return new XDocument(relationships);
@@ -446,11 +446,11 @@ public static class XlsxReport
 
 	private static XDocument Worksheet(Sheet sheet)
 	{
-		XElement data = new(Main + "sheetData");
+		XElement data = new(MAIN + "sheetData");
 
 		for(int r = 0; r < sheet.Rows.Count; r++)
 		{
-			XElement row = new(Main + "row", new XAttribute("r", r + 1));
+			XElement row = new(MAIN + "row", new XAttribute("r", r + 1));
 
 			for(int c = 0; c < sheet.Rows[r].Length; c++)
 			{
@@ -458,15 +458,15 @@ public static class XlsxReport
 				if(cell.IsEmpty)
 					continue;
 
-				string reference = $"{ColumnName(c)}{r + 1}";
-				object[] style = sheet.HeaderRows.Contains(r) ? [new XAttribute("s", HeaderStyle)] : [];
+				string strReference = $"{ColumnName(c)}{r + 1}";
+				object[] liStyle = sheet.HeaderRows.Contains(r) ? [new XAttribute("s", HEADER_STYLE)] : [];
 
 				row.Add(cell.Amount is { } number
-					        ? new XElement(Main + "c", new XAttribute("r", reference), style,
-					                       new XElement(Main + "v", number.ToString(CultureInfo.InvariantCulture)))
-					        : new XElement(Main + "c", new XAttribute("r", reference), style, new XAttribute("t", "inlineStr"),
-					                       new XElement(Main + "is",
-					                                    new XElement(Main + "t",
+					        ? new XElement(MAIN + "c", new XAttribute("r", strReference), liStyle,
+					                       new XElement(MAIN + "v", number.ToString(CultureInfo.InvariantCulture)))
+					        : new XElement(MAIN + "c", new XAttribute("r", strReference), liStyle, new XAttribute("t", "inlineStr"),
+					                       new XElement(MAIN + "is",
+					                                    new XElement(MAIN + "t",
 					                                                 new XAttribute(XNamespace.Xml + "space", "preserve"),
 					                                                 Clean(cell.Value ?? string.Empty)))));
 			}
@@ -474,7 +474,7 @@ public static class XlsxReport
 			data.Add(row);
 		}
 
-		XElement worksheet = new(Main + "worksheet");
+		XElement worksheet = new(MAIN + "worksheet");
 
 		// The widths have to come before the data; Excel rejects the part the other way round.
 		if(ColumnWidths(sheet) is { } widths) worksheet.Add(widths);
@@ -482,7 +482,7 @@ public static class XlsxReport
 		worksheet.Add(data);
 
 		// The schema wants this after the data, and Excel rejects the part if it comes before.
-		if(sheet.Filtered && sheet.Rows.Count > 0) worksheet.Add(new XElement(Main + "autoFilter", new XAttribute("ref", $"A1:{ColumnName(sheet.Rows[0].Length - 1)}{sheet.Rows.Count}")));
+		if(sheet.Filtered && sheet.Rows.Count > 0) worksheet.Add(new XElement(MAIN + "autoFilter", new XAttribute("ref", $"A1:{ColumnName(sheet.Rows[0].Length - 1)}{sheet.Rows.Count}")));
 
 		return new XDocument(worksheet);
 	}
@@ -494,28 +494,28 @@ public static class XlsxReport
 	/// </summary>
 	private static XElement? ColumnWidths(Sheet sheet)
 	{
-		int count = sheet.Rows.Count == 0 ? 0 : sheet.Rows.Max(r => r.Length);
-		if(count == 0) return null;
+		int nCount = sheet.Rows.Count == 0 ? 0 : sheet.Rows.Max(r => r.Length);
+		if(nCount == 0) return null;
 
-		int[] longest = new int[count];
+		int[] liLongest = new int[nCount];
 		foreach(Cell[] row in sheet.Rows)
 		{
 			for(int c = 0; c < row.Length; c++)
 			{
-				longest[c] = Math.Max(longest[c], Measure(row[c]));
+				liLongest[c] = Math.Max(liLongest[c], Measure(row[c]));
 			}
 		}
 
-		XElement columns = new(Main + "cols");
-		for(int c = 0; c < count; c++)
+		XElement liColumns = new(MAIN + "cols");
+		for(int c = 0; c < nCount; c++)
 		{
-			columns.Add(new XElement(Main + "col", new XAttribute("min", c + 1), 
+			liColumns.Add(new XElement(MAIN + "col", new XAttribute("min", c + 1), 
 			                         new XAttribute("max", c + 1), 
-			                         new XAttribute("width", Math.Clamp(longest[c] + 2, MinColumnWidth, MaxColumnWidth)), 
+			                         new XAttribute("width", Math.Clamp(liLongest[c] + 2, MIN_COLUMN_WIDTH, MAX_COLUMN_WIDTH)), 
 			                         new XAttribute("customWidth", 1)));
 		}
 
-		return columns;
+		return liColumns;
 	}
 
 	private static int Measure(Cell cell)
@@ -539,13 +539,13 @@ public static class XlsxReport
 
 	private static string ColumnName(int index)
 	{
-		string name = string.Empty;
+		string strName = string.Empty;
 		for(int i = index; i >= 0; i = i / 26 - 1)
 		{
-			name = (char) ('A' + i % 26) + name;
+			strName = (char) ('A' + i % 26) + strName;
 		}
 
-		return name;
+		return strName;
 	}
 
 	private static void Write(ZipArchive archive, string entryName, XDocument document)
@@ -560,16 +560,16 @@ public static class XlsxReport
 	#region Nested types
 	private sealed class Sheet
 	{
-		public Sheet(string name)
+		public Sheet(string strName)
 		{
-			this.Name = SafeName(name);
+			this.Name = SafeName(strName);
 		}
 
 		public string Name { get; private set; }
 
-		public void Rename(string name)
+		public void Rename(string strName)
 		{
-			this.Name = SafeName(name);
+			this.Name = SafeName(strName);
 		}
 
 		/// <summary>Lines of data, the headers not counted: what the tab reports.</summary>
@@ -577,7 +577,7 @@ public static class XlsxReport
 
 		public List<Cell[]> Rows { get; } = [];
 
-		public bool IsFull => this.Rows.Count >= SheetRowLimit;
+		public bool IsFull => this.Rows.Count >= SHEET_ROW_LIMIT;
 
 		public void Add(params Cell[] cells)
 		{
@@ -623,10 +623,10 @@ public static class XlsxReport
 		/// Excel allows 31 characters and forbids : \ / ? * [ ], and silently repairs a workbook that
 		/// breaks either rule - which reads to the person opening it as a corrupt file.
 		/// </summary>
-		private static string SafeName(string name)
+		private static string SafeName(string strName)
 		{
-			string cleaned = new([.. name.Where(c => c is not (':' or '\\' or '/' or '?' or '*' or '[' or ']'))]);
-			return cleaned.Length <= 31 ? cleaned : cleaned[..31];
+			string strCleaned = new([.. strName.Where(c => c is not (':' or '\\' or '/' or '?' or '*' or '[' or ']'))]);
+			return strCleaned.Length <= 31 ? strCleaned : strCleaned[..31];
 		}
 	}
 
